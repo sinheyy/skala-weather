@@ -34,9 +34,7 @@ defineEmits(['select-card', 'click-detail', 'show-recommend'])
       </div>
     </dl>
 
-    <button class="detail-btn" @click.stop="$emit('click-detail', city.name, city.status)">
-      상세보기
-    </button>
+    <button class="detail-btn" @click.stop="$emit('click-detail', city.id)">상세보기</button>
   </article>
 </template>
 
