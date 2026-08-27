@@ -3,7 +3,8 @@ import { ref } from 'vue'
 import axios from 'axios'
 
 const API_KEY = import.meta.env.VITE_TOUR_API_KEY
-const TOUR_URL = '/tour-api/B551011/KorService2/locationBasedList2'
+const BASE_URL = import.meta.env.VITE_TOUR_BASE_URL
+const TOUR_URL = `${BASE_URL}/locationBasedList2`
 
 const toSpotItem = (item) => ({
   id: item.contentid,

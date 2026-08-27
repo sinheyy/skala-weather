@@ -14,7 +14,8 @@ import OutfitPanel from '@/components/exercise/OutfitPanel.vue'
 import TravelSpotPanel from '@/components/exercise/TravelSpotPanel.vue'
 
 const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY
-const FORECAST_URL = 'https://api.openweathermap.org/data/2.5/forecast'
+const BASE_URL = import.meta.env.VITE_OPENWEATHER_BASE_URL
+const FORECAST_URL = `${BASE_URL}/forecast`
 
 const route = useRoute()
 const configStore = useConfigStore()

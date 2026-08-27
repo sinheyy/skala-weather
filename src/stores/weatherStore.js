@@ -3,7 +3,8 @@ import { ref } from 'vue'
 import axios from 'axios'
 
 const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY
-const CURRENT_URL = 'https://api.openweathermap.org/data/2.5/weather'
+const BASE_URL = import.meta.env.VITE_OPENWEATHER_BASE_URL
+const CURRENT_URL = `${BASE_URL}/weather`
 
 const regionList = [
   { id: 'city_01', name: '서울', query: 'Seoul,KR' },

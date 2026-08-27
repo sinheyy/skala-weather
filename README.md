@@ -517,21 +517,15 @@ params: {
 - 인터넷 예제에 많은 `KorService1`은 **폐기**되었습니다. `KorService2` + `locationBasedList2`를 써야 합니다.
 - `arrange`를 `Q`(수정일순)로 두면 서울에서 외곽 산이 먼저 나옵니다. **`E`(거리순)** 로 바꾸니 덕수궁 · 청계광장 같은 도심 명소가 나옵니다.
 - 하드코딩해 두었던 관광지 목록을 지우고 이 응답(`title` · `addr1` · `firstimage` · `dist`)으로 교체했습니다.
-- 공공데이터포털 API는 **CORS가 열려 있지 않아** 브라우저에서 직접 못 부릅니다. `vite.config.js`에 개발용 프록시를 두고 `/tour-api`로 우회합니다.
+- 관광지 사진(`firstimage`) 주소가 `http://`로 내려옵니다. HTTPS로 배포하면 혼합 콘텐츠로 차단되므로 스토어에서 `https://`로 바꿔 담습니다.
+- 처음에는 CORS가 막힐 것으로 보고 Vite 개발 프록시를 뒀는데, **실제로는 공공데이터포털이 `Access-Control-Allow-Origin`을 내려줍니다.** 프록시를 걷어내고 API 주소를 직접 호출하도록 바꿨습니다. 덕분에 개발과 배포가 같은 경로를 씁니다.
+
+API 주소는 키와 함께 `.env`로 분리했습니다. 배포 환경에서 주소가 달라져도 코드를 고칠 필요가 없습니다.
 
 ```js
-server: {
-  proxy: {
-    '/tour-api': {
-      target: 'https://apis.data.go.kr',
-      changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/tour-api/, ''),
-    },
-  },
-},
+const BASE_URL = import.meta.env.VITE_TOUR_BASE_URL
+const TOUR_URL = `${BASE_URL}/locationBasedList2`
 ```
-
-- 이 프록시는 `npm run dev`에서만 동작합니다. 배포 시에는 별도 대응이 필요합니다.
 
 ### 16. 즐겨찾기 · 방문 기록
 
