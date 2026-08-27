@@ -1,12 +1,13 @@
-# Hands on - Weather Mockup
+# Hands on - Weather Router
 
 - **과목명** : Front-framework: Vue.js
-- **실습과제** : Hands on - Weather Mockup
+- **실습과제** : Hands on - Weather Mockup → Composition → Component → Router
 - **프로젝트명** : skala-weather
 
 한 파일(`App.vue`)에 몰려 있던 날씨 목업을 **재사용 가능한 컴포넌트로 분리**하고,
 **Vue Router**로 여러 페이지를 가진 애플리케이션으로 확장했습니다.
-Slot으로 공통 패널 디자인을 하나로 묶고, Props / Emits로 부모–자식 간 데이터 흐름을 정리했습니다.
+Slot으로 공통 패널 디자인을 하나로 묶고, Props / Emits로 부모–자식 간 데이터 흐름을 정리했으며,
+여기에 **키보드 단축키**와 **직접 만든 화면 두 개**(여행지 추천 · 비 소식)를 더했습니다.
 
 ---
 
@@ -25,39 +26,45 @@ npm run dev
 src/
 ├─ App.vue                  레이아웃 셸 (네비게이션 + RouterView)
 ├─ router/index.js          라우트 정의 · 지연 로딩
-├─ data/weatherData.js      Mock Data (전국 18개 지역)
 ├─ views/
-│  ├─ WeatherHomeView.vue   메인 대시보드 (상태 소유)
+│  ├─ WeatherHomeView.vue   메인 대시보드 (Mock Data · 상태 소유)
 │  ├─ WeatherDetailView.vue 도시 상세 페이지
+│  ├─ TravelPickView.vue    여행지 추천 (직접 추가)
+│  ├─ WeatherRainyView.vue  비 소식 (직접 추가)
 │  ├─ WeatherAboutView.vue  서비스 소개
 │  └─ NotFoundView.vue      404
 ├─ components/exercise/
 │  ├─ BaseDashboardCard.vue 공통 패널 (slot)
 │  ├─ NavigationBar.vue     상단 네비게이션
-│  ├─ SearchBar.vue         도시 검색 입력
+│  ├─ SearchBar.vue         도시 검색 입력 · 단축키
 │  ├─ WeatherCard.vue       도시 카드 1장
 │  ├─ LifeIndexPanel.vue    생활지수
+│  ├─ OutfitPanel.vue       옷차림 · 메뉴 추천
+│  ├─ TravelSpotPanel.vue   가볼 만한 곳
 │  └─ RankingBoard.vue      전국 랭킹
 └─ assets/main.css          테마 토큰 · 배경 (전역)
 ```
 
 ## 페이지 구성
 
-| 경로               | 이름       | 화면                                                      |
-| ------------------ | ---------- | --------------------------------------------------------- |
-| `/`                | `home`     | 메인 대시보드 — 검색 / 지역별 카드 / 생활지수 / 전국 랭킹 |
-| `/detail/:cityId`  | `detail`   | 선택한 도시의 상세 기상 정보                              |
-| `/about`           | `about`    | 서비스 소개                                               |
-| `/:pathMatch(.*)*` | `NotFound` | 존재하지 않는 경로                                        |
+| 경로               | 이름       | 화면                                                        |
+| ------------------ | ---------- | ----------------------------------------------------------- |
+| `/`                | `home`     | 메인 대시보드 — 검색 / 지역별 카드 / 생활지수 / 추천 / 랭킹 |
+| `/weather/:cityId` | `detail`   | 선택한 도시의 상세 기상 정보                                |
+| `/travel`          | `travel`   | 날씨 조건을 골라 점수로 뽑는 여행지 추천 (직접 추가)        |
+| `/rainy`           | `rainy`    | 비가 오는 지역만 모아 보기 (직접 추가)                      |
+| `/about`           | `about`    | 서비스 소개                                                 |
+| `/:pathMatch(.*)*` | `NotFound` | 존재하지 않는 경로                                          |
 
 ```
 App.vue (셸)
-├─ NavigationBar          HOME / ABOUT — 모든 페이지 공통
+├─ NavigationBar          HOME / RAINY / TRAVEL / ABOUT — 모든 페이지 공통
 └─ RouterView
    └─ WeatherHomeView
-      ├─ [도시 검색]        SearchBar
-      ├─ [지역별 날씨 현황]  WeatherCard × 18 (반응형 그리드)
+      ├─ [도시 검색]        SearchBar        (Enter / Esc 단축키)
+      ├─ [지역별 날씨 현황]  WeatherCard × 18 (반응형 그리드 · 더운 지역만 보기)
       ├─ [생활지수]         LifeIndexPanel
+      ├─ [오늘의 추천]       OutfitPanel
       ├─ [전국 랭킹]        RankingBoard
       └─ [상태바]           화면 하단 고정 — 선택한 도시 표시
 ```
@@ -192,10 +199,12 @@ routes: [
   { path: '/', name: 'home', component: () => import('@/views/WeatherHomeView.vue') },
   { path: '/about', name: 'about', component: () => import('@/views/WeatherAboutView.vue') },
   {
-    path: '/detail/:cityId',
+    path: '/weather/:cityId',
     name: 'detail',
     component: () => import('@/views/WeatherDetailView.vue'),
   },
+  { path: '/travel', name: 'travel', component: () => import('@/views/TravelPickView.vue') },
+  { path: '/rainy', name: 'rainy', component: () => import('@/views/WeatherRainyView.vue') },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
@@ -232,48 +241,162 @@ const showDetail = (cityId) => {
 - `path` 문자열 대신 **`name` + `params`**로 이동해, 경로 형식이 바뀌어도 호출부를 고치지 않아도 됩니다.
 - 없는 `cityId`로 들어오면 안내 문구를 표시합니다.
 - `onMounted`는 마운트될 때 한 번만 실행됩니다. 상세 → 상세로 이동하면 컴포넌트가 재사용되어 갱신되지 않으므로, 그런 경로를 추가한다면 `watch(() => route.params.cityId, ...)`가 필요합니다.
-- 상세 페이지에서도 `BaseDashboardCard`와 `LifeIndexPanel`을 그대로 재사용했습니다. `:city="city"` 한 줄이면 생활지수가 붙습니다.
+- 상세 페이지에서도 `BaseDashboardCard`, `LifeIndexPanel`, `OutfitPanel`, `TravelSpotPanel`을 그대로 재사용했습니다. `:city="city"` 한 줄이면 패널이 붙습니다.
 
-### 7. 데이터 공유 모듈
+### 7. Mock Data 보관 위치
 
-상세 페이지가 같은 데이터를 써야 해서, 뷰 안에 있던 배열을 `src/data/weatherData.js`로 분리했습니다.
+Mock Data는 **각 뷰가 직접 가지고 있습니다.** 화면을 옮겨 다녀도 상태가 이어지는 전역 저장소는 아직 배우기 전이라, 뷰마다 필요한 배열을 선언해 두고 자식에게는 props로만 내려 줍니다.
 
 ```js
-export const weatherList = [
+// WeatherHomeView.vue — 검색 / 필터가 반응해야 하므로 ref
+const weatherList = ref([
   /* 전국 18개 지역 */
-]
-export const weatherRecommend = [
-  /* 날씨별 조언 */
+])
+
+// WeatherDetailView.vue — 조회만 하므로 일반 배열
+const weatherList = [
+  /* 전국 18개 지역 */
 ]
 ```
 
-- 홈에서는 `const weatherList = ref(weatherData)`로 받아 반응형으로 사용하고, 상세 페이지에서는 조회만 하므로 배열 그대로 씁니다.
+- 홈은 검색·필터가 걸리므로 `ref()`로 감싸고, 나머지 뷰는 읽기만 하므로 `const` 배열 그대로 씁니다.
+- 라우팅된 뷰끼리는 부모–자식 관계가 아니라 **`RouterView`가 갈아 끼우는 형제 관계**입니다. props가 닿지 않아 같은 배열이 여러 뷰에 중복됩니다. 다음 단계인 **Pinia Store**로 합칠 부분입니다.
+- 반대로 컴포넌트는 전부 자식이므로, 데이터를 직접 import하는 컴포넌트는 하나도 없습니다. `TravelSpotPanel`도 관광 정보 배열을 `:spots`로 받습니다.
+
+### 8. 키보드 단축키 (`키 수식어`)
+
+검색창에서 마우스 없이 조작할 수 있도록 이벤트 수식어를 붙였습니다.
+
+```html
+<!-- SearchBar.vue -->
+<input
+  :value="keyword"
+  @input="$emit('update-query', $event.target.value)"
+  @keyup.enter="$emit('select-first')"
+  @keyup.esc="$emit('update-query', '')"
+/>
+```
+
+```js
+// WeatherHomeView.vue
+const selectFirstCity = () => {
+  const first = filteredWeatherList.value[0]
+  selectedCity.value = first ? first.name : ''
+}
+```
+
+| 키      | 동작                            |
+| ------- | ------------------------------- |
+| `Enter` | 검색 결과의 첫 번째 도시를 선택 |
+| `Esc`   | 입력한 검색어를 한 번에 지우기  |
+
+- `@keyup.enter` / `@keyup.esc`는 `e.key`를 직접 비교하지 않아도 되는 **키 수식어**입니다.
+- 단축키를 처리하는 쪽도 부모입니다. 자식은 `select-first`라는 **"엔터를 눌렀다"는 사실만** emit하고, 첫 번째 도시를 고르는 판단은 목록을 가진 부모가 합니다.
+- `Esc`는 별도 이벤트를 만들지 않고 기존 `update-query`에 빈 문자열을 실어 보내 재사용했습니다.
+
+### 9. 나만의 반응형 변수 — 더운 지역만 보기
+
+```js
+const onlyHot = ref(false)
+
+const filteredWeatherList = computed(() => {
+  const trimKeyword = keyword.value.trim()
+
+  return weatherList.value.filter((item) => {
+    const matchKeyword = !trimKeyword || item.name.includes(trimKeyword)
+    return matchKeyword && (!onlyHot.value || item.temp >= 25)
+  })
+})
+
+watch(onlyHot, (newValue) => {
+  console.log(`[watch👀-onlyHot] 더운 지역만 보기: ${newValue}`)
+})
+```
+
+- 조건을 `computed` 두 개로 나누지 않고 **하나의 `filter` 안에서 합쳤습니다.** 검색어와 온도 조건이 항상 함께 걸리기 때문입니다.
+- `!onlyHot.value || ...` 형태로 써서, 토글이 꺼져 있으면 온도 조건 자체를 건너뜁니다.
+- 토글은 `@click="onlyHot = !onlyHot"`, 켜진 표시는 `:class="{ 'hot-toggle--on': onlyHot }"`로 처리했습니다.
+
+### 10. 직접 추가한 화면
+
+**여행지 추천 (`/travel`)** — 원하는 날씨 조건을 버튼으로 고르면 점수가 다시 계산됩니다.
+
+```js
+const tempPick = ref('cool')
+const rainPick = ref('dry')
+const humidityPick = ref('low')
+
+const getScore = (city) => {
+  const tempScore = tempPick.value === 'cool' ? 100 - (city.temp - 20) * 6 : (city.temp - 20) * 6
+  const rainScore =
+    rainPick.value === 'dry' ? 100 - city.precipitation * 1.5 : city.precipitation * 1.5
+  const humidityScore =
+    humidityPick.value === 'low' ? 100 - (city.humidity - 40) * 2 : (city.humidity - 40) * 2
+
+  return Math.max(0, Math.round((tempScore + rainScore + humidityScore) / 3))
+}
+```
+
+- 기준 3개(기온 · 강수량 · 습도)를 각각 2지선다 버튼으로 만들고, **삼항 연산자로 점수 방향만 뒤집었습니다.**
+- 순위는 `computed` 안에서 `map` → `sort` → `slice(0, 5)`로 만듭니다. `ref`를 읽고 있으므로 버튼을 누르면 자동으로 다시 계산됩니다.
+- 1위가 바뀔 때를 `watch(bestCity, ...)`로 감지해 콘솔에 남깁니다.
+
+**비 소식 (`/rainy`)** — 강수량 기준을 골라 비 오는 지역만 모아 봅니다.
+
+- `<option :value="0">`처럼 숫자를 바인딩하고 `v-model.number`로 받아, 강수량 비교가 문자열이 아닌 숫자로 이뤄지게 했습니다.
+- 카드는 홈에서 쓰던 `WeatherCard`를 그대로 재사용하고, `@click-detail`만 연결해 상세 페이지로 보냅니다.
+
+### 11. 날씨에 반응하는 추천 패널
+
+`OutfitPanel`과 `TravelSpotPanel`은 생활지수와 같은 방식으로, 받은 도시 하나만 보고 결과를 정합니다.
+
+```js
+// OutfitPanel.vue
+const outfit = computed(() => {
+  if (props.city.temp >= 30) {
+    return { icon: '🩳', name: '반팔 · 반바지', desc: '통풍 잘 되는 얇은 옷으로 입으세요.' }
+  }
+  if (props.city.temp >= 23) {
+    return { icon: '👕', name: '반팔 · 얇은 셔츠', desc: '가볍게 입고 나가기 좋은 날이에요.' }
+  }
+  ...
+})
+```
+
+- 문자열 대신 **객체를 반환**해서 아이콘 · 이름 · 설명을 한 번에 넘겼습니다. 템플릿에서는 `{{ outfit.icon }}`처럼 꺼내 씁니다.
+- `TravelSpotPanel`은 `:city`와 `:spots`를 함께 받아 `find`로 지역을 찾고, 강수량 · 기온에 따라 관광 팁 문구를 바꿉니다.
+- 두 패널 모두 홈 · 상세 · 여행지 추천 **세 화면에서 그대로 재사용**됩니다.
 
 ---
 
 ## 컴포넌트 인터페이스
 
-| 컴포넌트            | Props     | Emits                                           |
-| ------------------- | --------- | ----------------------------------------------- |
-| `BaseDashboardCard` | `title`   | — (기본 slot)                                   |
-| `SearchBar`         | `keyword` | `update-query`                                  |
-| `WeatherCard`       | `city`    | `select-card`, `click-detail`, `show-recommend` |
-| `LifeIndexPanel`    | `city`    | —                                               |
-| `RankingBoard`      | `cities`  | —                                               |
-| `NavigationBar`     | —         | —                                               |
+| 컴포넌트            | Props           | Emits                                           |
+| ------------------- | --------------- | ----------------------------------------------- |
+| `BaseDashboardCard` | `title`         | — (기본 slot)                                   |
+| `SearchBar`         | `keyword`       | `update-query`, `select-first`                  |
+| `WeatherCard`       | `city`          | `select-card`, `click-detail`, `show-recommend` |
+| `LifeIndexPanel`    | `city`          | —                                               |
+| `OutfitPanel`       | `city`          | —                                               |
+| `TravelSpotPanel`   | `city`, `spots` | —                                               |
+| `RankingBoard`      | `cities`        | —                                               |
+| `NavigationBar`     | —               | —                                               |
 
-상태(`keyword`, `selectedCity`, `weatherList`)와 `window.alert` 처리는 모두 `WeatherHomeView`가 소유하고, 자식들은 표시와 이벤트 전달만 담당합니다.
+상태(`keyword`, `selectedCity`, `onlyHot`, `weatherList`)와 `window.alert` 처리는 모두 `WeatherHomeView`가 소유하고, 자식들은 표시와 이벤트 전달만 담당합니다.
 
 ## 학습 정리
 
-| 개념           | 내용                                                                                          |
-| -------------- | --------------------------------------------------------------------------------------------- |
-| `slot`         | 껍데기와 내용을 분리. 슬롯 내용은 **부모 스코프**로 컴파일되므로 scoped 스타일도 부모에 둔다  |
-| `props`        | 읽기 전용. 자식에서 직접 수정 불가. `<script>`에서 쓰려면 `const props = defineProps(...)`    |
-| `emits`        | 자식은 "무슨 일이 있었다"만 알리고, 실제 처리는 부모가 결정                                   |
-| `v-model` 규약 | `modelValue` / `update:modelValue` 이름을 지키면 `v-model` 사용 가능. 다른 이름이면 수동 연결 |
-| `.stop`        | 컴포넌트로 분리해도 DOM 버블링은 그대로. 중첩 클릭 핸들러에 필수                              |
-| 지연 로딩      | `component: () => import(...)`. 정적 import가 하나라도 남으면 분할되지 않음                   |
-| `RouterLink`   | `router-link-active`는 접두사 일치, `router-link-exact-active`는 완전 일치                    |
-| 동적 라우트    | `:cityId` → `route.params.cityId`. 이동은 `name` + `params` 조합이 안전                       |
-| CSS 변수       | DOM을 타고 상속되므로, 여러 페이지가 공유하려면 `:root`에 선언해야 한다                       |
+| 개념             | 내용                                                                                          |
+| ---------------- | --------------------------------------------------------------------------------------------- |
+| `slot`           | 껍데기와 내용을 분리. 슬롯 내용은 **부모 스코프**로 컴파일되므로 scoped 스타일도 부모에 둔다  |
+| `props`          | 읽기 전용. 자식에서 직접 수정 불가. `<script>`에서 쓰려면 `const props = defineProps(...)`    |
+| `emits`          | 자식은 "무슨 일이 있었다"만 알리고, 실제 처리는 부모가 결정                                   |
+| `v-model` 규약   | `modelValue` / `update:modelValue` 이름을 지키면 `v-model` 사용 가능. 다른 이름이면 수동 연결 |
+| `.stop`          | 컴포넌트로 분리해도 DOM 버블링은 그대로. 중첩 클릭 핸들러에 필수                              |
+| 지연 로딩        | `component: () => import(...)`. 정적 import가 하나라도 남으면 분할되지 않음                   |
+| `RouterLink`     | `router-link-active`는 접두사 일치, `router-link-exact-active`는 완전 일치                    |
+| 동적 라우트      | `:cityId` → `route.params.cityId`. 이동은 `name` + `params` 조합이 안전                       |
+| 키 수식어        | `@keyup.enter` / `@keyup.esc`. `e.key` 비교 없이 특정 키만 처리                               |
+| `v-model` 수식어 | `.number`는 입력값을 숫자로 변환. 텍스트 입력은 기본이 문자열이라 그대로 비교하면 어긋난다    |
+| 형제 뷰          | `RouterView`로 갈아 끼우는 뷰끼리는 props가 닿지 않는다 → 전역 상태(Pinia)가 필요한 지점      |
+| CSS 변수         | DOM을 타고 상속되므로, 여러 페이지가 공유하려면 `:root`에 선언해야 한다                       |
