@@ -1,17 +1,29 @@
-# Hands on - Weather Store
+# Hands on - Weather Axios
 
 - **과목명** : Front-framework: Vue.js
-- **실습과제** : Hands on - Weather Mockup → Composition → Component → Router → Store
+- **실습과제** : Hands on - Weather Mockup → Composition → Component → Router → Store → Axios
 - **프로젝트명** : skala-weather
 
 한 파일(`App.vue`)에 몰려 있던 날씨 목업을 **재사용 가능한 컴포넌트로 분리**하고,
 **Vue Router**로 여러 페이지를 가진 애플리케이션으로 확장했습니다.
 Slot으로 공통 패널 디자인을 하나로 묶고, Props / Emits로 부모–자식 간 데이터 흐름을 정리했으며,
-여기에 **Pinia 전역 스토어**로 단위 · 테마 · 즐겨찾기 · 방문 기록을 모든 화면이 함께 쓰도록 했고,
-**키보드 단축키**와 **직접 만든 화면 두 개**(여행지 추천 · 비 소식)를 더했습니다.
+여기에 **Pinia 전역 스토어**로 단위 · 즐겨찾기 · 방문 기록을 모든 화면이 함께 쓰도록 했고,
+**Axios**로 OpenWeatherMap과 한국관광공사 관광정보를 연동해 화면을 실제 데이터로 채웠습니다.
+**키보드 단축키**와 **직접 만든 화면 두 개**(여행지 추천 · 비 소식)도 더했습니다.
 
 ---
 
+## 환경 변수
+
+프로젝트 루트에 `.env` 파일을 만들고 발급받은 키를 넣습니다. `VITE_`로 시작해야 클라이언트 코드에서 읽을 수 있습니다.
+
+```
+VITE_OPENWEATHER_API_KEY=OpenWeatherMap에서_발급받은_키
+VITE_TOUR_API_KEY=공공데이터포털_일반인증키(Decoding)
+```
+
+- 공공데이터포털 키는 반드시 **Decoding** 쪽을 넣습니다. Encoding 키(`%2B` 등이 섞인 값)를 넣으면 axios가 한 번 더 인코딩해 인증이 실패합니다.
+- `.env`는 `.gitignore`에 등록해 두었습니다.
 
 ## 프로젝트 구조
 
@@ -20,7 +32,9 @@ src/
 ├─ App.vue                  레이아웃 셸 (네비게이션 + RouterView)
 ├─ router/index.js          라우트 정의 · 지연 로딩
 ├─ stores/
-│  ├─ configStore.js        날씨 단위 · 화면 테마
+│  ├─ weatherStore.js       실시간 날씨 (OpenWeatherMap)
+│  ├─ tourStore.js          주변 관광지 (한국관광공사)
+│  ├─ configStore.js        날씨 단위 (섭씨 / 화씨)
 │  ├─ favoriteStore.js      즐겨찾기 도시 (직접 추가)
 │  └─ historyStore.js       최근 본 지역 (직접 추가)
 ├─ views/
@@ -34,14 +48,13 @@ src/
 │  ├─ BaseDashboardCard.vue 공통 패널 (slot)
 │  ├─ NavigationBar.vue     상단 네비게이션
 │  ├─ UnitToggler.vue       섭씨 · 화씨 전환
-│  ├─ ThemeToggler.vue      라이트 · 다크 전환
 │  ├─ SearchBar.vue         도시 검색 입력 · 단축키
 │  ├─ WeatherCard.vue       도시 카드 1장
 │  ├─ LifeIndexPanel.vue    생활지수
 │  ├─ OutfitPanel.vue       옷차림 · 메뉴 추천
 │  ├─ TravelSpotPanel.vue   가볼 만한 곳
 │  └─ RankingBoard.vue      전국 랭킹
-└─ assets/main.css          테마 토큰 · 배경 (전역)
+└─ assets/main.css          색상 토큰 · 배경 (전역)
 ```
 
 ## 페이지 구성
@@ -58,7 +71,6 @@ src/
 ```
 App.vue (셸)
 ├─ NavigationBar          HOME / RAINY / TRAVEL / ABOUT — 모든 페이지 공통
-├─ ThemeToggler          라이트 / 다크 — 모든 페이지 공통
 ├─ UnitToggler           섭씨 / 화씨 — 모든 페이지 공통
 └─ RouterView
    └─ WeatherHomeView
@@ -217,19 +229,16 @@ routes: [
 
 - `component`에 컴포넌트 대신 **"필요할 때 불러올 함수"**를 넘겨 라우트 단위로 번들을 분리했습니다. 빌드 결과에서 페이지별 `.js` / `.css` 청크가 각각 생성됩니다.
 - 단, **정적 `import`가 한 군데라도 남아 있으면 코드 분할은 일어나지 않습니다.** `App.vue`가 `<RouterView />`를 쓰도록 바꾼 뒤에야 실제로 분리되었습니다.
-- 네비게이션은 `App.vue`로 올려 모든 페이지에서 보이게 했습니다. 이때 테마 토큰이 `.weather-app` 안에 있으면 상속이 끊기므로, **토큰과 배경을 `main.css`의 `:root` / `body`로 이동**시켰습니다.
+- 네비게이션은 `App.vue`로 올려 모든 페이지에서 보이게 했습니다. 이때 색상 토큰이 `.weather-app` 안에 있으면 상속이 끊기므로, **토큰과 배경을 `main.css`의 `:root` / `body`로 이동**시켰습니다.
 - `NavigationBar`는 `RouterLink`를 사용합니다. 현재 경로와 일치하면 `router-link-exact-active` 클래스가 자동으로 붙어, 활성 표시를 CSS만으로 처리했습니다. `to="/"`는 모든 경로의 접두사이므로 `router-link-active`가 아닌 **`exact-active`** 를 써야 합니다.
 
-### 6. 상세 페이지 — 동적 라우트 + Mount 시점 조회
+### 6. 상세 페이지 — 동적 라우트
 
 ```js
 // WeatherDetailView.vue
 const route = useRoute()
-const city = ref(null)
 
-onMounted(() => {
-  city.value = weatherList.find((item) => item.id === route.params.cityId) ?? null
-})
+const city = computed(() => weatherStore.findCity(route.params.cityId))
 ```
 
 ```js
@@ -239,32 +248,27 @@ const showDetail = (cityId) => {
 }
 ```
 
-- 동적 세그먼트 `:cityId`를 `route.params.cityId`로 읽어 Mock Data에서 도시 객체를 찾습니다.
+- 동적 세그먼트 `:cityId`를 `route.params.cityId`로 읽어 스토어에서 도시 객체를 찾습니다.
 - `path` 문자열 대신 **`name` + `params`**로 이동해, 경로 형식이 바뀌어도 호출부를 고치지 않아도 됩니다.
 - 없는 `cityId`로 들어오면 안내 문구를 표시합니다.
-- `onMounted`는 마운트될 때 한 번만 실행됩니다. 상세 → 상세로 이동하면 컴포넌트가 재사용되어 갱신되지 않으므로, 그런 경로를 추가한다면 `watch(() => route.params.cityId, ...)`가 필요합니다.
+- 처음에는 `onMounted`에서 `ref`에 담았는데, **API 응답이 나중에 도착하면 그 시점엔 목록이 비어 있어 아무것도 못 찾습니다.** `computed`로 바꾸니 데이터가 도착하는 순간 화면이 알아서 채워집니다.
 - 상세 페이지에서도 `BaseDashboardCard`, `LifeIndexPanel`, `OutfitPanel`, `TravelSpotPanel`을 그대로 재사용했습니다. `:city="city"` 한 줄이면 패널이 붙습니다.
 
-### 7. Mock Data 보관 위치
+### 7. 데이터 흐름
 
-Mock Data는 **각 뷰가 직접 가지고 있습니다.** 라우팅된 뷰끼리는 props가 닿지 않아, 뷰마다 필요한 배열을 선언해 두고 자식에게는 props로만 내려 줍니다.
+날씨 데이터는 **`weatherStore` 한 곳**에만 있습니다. `App.vue`가 앱 시작 시 한 번 받아 두면, 모든 화면이 같은 배열을 봅니다.
 
-```js
-// WeatherHomeView.vue — 검색 / 필터가 반응해야 하므로 ref
-const weatherList = ref([
-  /* 전국 18개 지역 */
-])
-
-// WeatherDetailView.vue — 조회만 하므로 일반 배열
-const weatherList = [
-  /* 전국 18개 지역 */
-]
+```
+App.vue (onMounted)
+   └─ weatherStore.fetchWeatherList()   ← 18개 도시 1회 조회
+        ├─ WeatherHomeView    검색 · 필터 · 랭킹
+        ├─ WeatherDetailView  선택한 도시 1개
+        ├─ TravelPickView     점수 계산
+        └─ WeatherRainyView   비 오는 지역
 ```
 
-- 홈은 검색·필터가 걸리므로 `ref()`로 감싸고, 나머지 뷰는 읽기만 하므로 `const` 배열 그대로 씁니다.
-- 라우팅된 뷰끼리는 부모–자식 관계가 아니라 **`RouterView`가 갈아 끼우는 형제 관계**입니다. props가 닿지 않아 같은 배열이 여러 뷰에 중복됩니다.
-- 뒤에서 도입한 **Pinia**로 이 중복도 `weatherStore` 하나로 합칠 수 있습니다. 날씨 데이터 자체는 아직 뷰에 남겨 두었습니다.
-- 반대로 컴포넌트는 전부 자식이므로, 데이터를 직접 import하는 컴포넌트는 하나도 없습니다. `TravelSpotPanel`도 관광 정보 배열을 `:spots`로 받습니다.
+- 처음에는 같은 배열이 네 뷰에 복사돼 있었습니다. 라우팅된 뷰끼리는 부모–자식이 아니라 **`RouterView`가 갈아 끼우는 형제 관계**라 props가 닿지 않기 때문입니다. 스토어로 올리면서 중복이 사라졌습니다.
+- 반대로 컴포넌트는 전부 자식이므로 **데이터를 직접 import하는 컴포넌트는 하나도 없습니다.** 전부 props로 받습니다.
 
 ### 8. 키보드 단축키 (`키 수식어`)
 
@@ -349,9 +353,9 @@ const getScore = (city) => {
 - `<option :value="0">`처럼 숫자를 바인딩하고 `v-model.number`로 받아, 강수량 비교가 문자열이 아닌 숫자로 이뤄지게 했습니다.
 - 카드는 홈에서 쓰던 `WeatherCard`를 그대로 재사용하고, `@click-detail`만 연결해 상세 페이지로 보냅니다.
 
-### 11. 날씨에 반응하는 추천 패널
+### 11. 옷차림 · 메뉴 추천 패널
 
-`OutfitPanel`과 `TravelSpotPanel`은 생활지수와 같은 방식으로, 받은 도시 하나만 보고 결과를 정합니다.
+`OutfitPanel`은 생활지수와 같은 방식으로, 받은 도시 하나만 보고 결과를 정합니다.
 
 ```js
 // OutfitPanel.vue
@@ -367,8 +371,8 @@ const outfit = computed(() => {
 ```
 
 - 문자열 대신 **객체를 반환**해서 아이콘 · 이름 · 설명을 한 번에 넘겼습니다. 템플릿에서는 `{{ outfit.icon }}`처럼 꺼내 씁니다.
-- `TravelSpotPanel`은 `:city`와 `:spots`를 함께 받아 `find`로 지역을 찾고, 강수량 · 기온에 따라 관광 팁 문구를 바꿉니다.
-- 두 패널 모두 홈 · 상세 · 여행지 추천 **세 화면에서 그대로 재사용**됩니다.
+- `TravelSpotPanel`은 처음엔 하드코딩한 명소 목록에서 `find`로 찾았지만, 지금은 **관광정보 API 결과를 `:spots`로 받아 그리기만 합니다.** 조회는 `tourStore`가 맡습니다.
+- 패널들은 홈 · 상세 · 여행지 추천 **여러 화면에서 그대로 재사용**됩니다.
 
 ### 12. 전역 상태 (`Pinia`)
 
@@ -390,15 +394,18 @@ export const useConfigStore = defineStore('config', () => {
 })
 ```
 
-| 스토어          | state           | getters                            | actions                                          |
-| --------------- | --------------- | ---------------------------------- | ------------------------------------------------ |
-| `configStore`   | `unit`, `theme` | `unitSymbol`, `unitName`, `isDark` | `toggleUnit`, `toggleTheme`                      |
-| `favoriteStore` | `favoriteIds`   | `favoriteCount`                    | `isFavorite`, `toggleFavorite`, `clearFavorites` |
-| `historyStore`  | `historyIds`    | `hasHistory`                       | `addHistory`, `clearHistory`                     |
+| 스토어          | state                                      | getters                  | actions                                          |
+| --------------- | ------------------------------------------ | ------------------------ | ------------------------------------------------ |
+| `weatherStore`  | `weatherList`, `isLoading`, `errorMessage` | —                        | `fetchWeatherList`, `findCity`                   |
+| `tourStore`     | `spotList`, `isLoading`, `errorMessage`    | —                        | `fetchSpots`                                     |
+| `configStore`   | `unit`                                     | `unitSymbol`, `unitName` | `toggleUnit`                                     |
+| `favoriteStore` | `favoriteIds`                              | `favoriteCount`          | `isFavorite`, `toggleFavorite`, `clearFavorites` |
+| `historyStore`  | `historyIds`                               | `hasHistory`             | `addHistory`, `clearHistory`                     |
 
 - 컴포넌트에서는 `const configStore = useConfigStore()`로 받아 `configStore.unit`처럼 **점 표기로 접근**했습니다. `const { unit } = configStore`처럼 구조 분해하면 반응형 연결이 끊어지고, 살리려면 `storeToRefs`가 필요합니다.
-- `favoriteStore`와 `historyStore`는 **직접 추가한 스토어**이고, 테마는 앱 설정이라 별도 파일 대신 `configStore`에 state · getter · action을 더했습니다.
-- 스토어는 부모가 props로 내려 줄 필요 없이 **필요한 컴포넌트가 직접 꺼내 씁니다.** `App.vue`, `WeatherCard`, `RankingBoard`, `UnitToggler`, `ThemeToggler`, 홈 · 상세 뷰에서 사용합니다.
+- `favoriteStore`와 `historyStore`는 **직접 추가한 스토어**입니다.
+- 스토어가 화면 단위가 아니라 **의미 단위로 나뉘어 있습니다.** 서버에서 받아오는 것(`weatherStore` · `tourStore`)과 앱이 소유한 것(`configStore` · `favoriteStore` · `historyStore`)이 구분됩니다.
+- 스토어는 부모가 props로 내려 줄 필요 없이 **필요한 컴포넌트가 직접 꺼내 씁니다.** `App.vue`, `WeatherCard`, `RankingBoard`, `UnitToggler`, 홈 · 상세 뷰에서 사용합니다.
 
 ### 13. 단위 변환 적용
 
@@ -420,28 +427,85 @@ const displayTemp = computed(() => {
 - **평균 대비 편차는 변환식을 그대로 쓰면 틀립니다.** `+32`가 두 번 들어가기 때문입니다. 평균도 화씨로 바꾼 뒤 빼서 `℃ 편차 × 1.8`이 되도록 했습니다.
 - 같은 변환 코드가 카드 · 상세 · 랭킹에 반복됩니다. Composable로 묶을 수 있는 지점입니다. (범위 제외)
 
-### 14. 라이트 / 다크 모드
+### 14. Axios — 실시간 날씨 연동
 
 ```js
-// App.vue
-watchEffect(() => {
-  document.documentElement.setAttribute('data-theme', configStore.theme)
-})
-```
+// stores/weatherStore.js
+const fetchWeatherList = async () => {
+  isLoading.value = true
+  errorMessage.value = ''
 
-```css
-/* main.css */
-:root[data-theme='dark'] {
-  --text-strong: #e9f2fb;
-  --accent: #7cc0f7;
+  try {
+    const responses = await Promise.all(
+      regionList.map((region) =>
+        axios.get(CURRENT_URL, {
+          params: { q: region.query, appid: API_KEY, units: 'metric', lang: 'kr' },
+        }),
+      ),
+    )
+
+    weatherList.value = responses.map((response, index) =>
+      toCityItem(regionList[index], response.data),
+    )
+  } catch (error) {
+    console.error('날씨 데이터를 가져오지 못했습니다:', error)
+    errorMessage.value = '날씨 데이터를 불러오지 못했어요. API Key를 확인해 주세요.'
+  } finally {
+    isLoading.value = false
+  }
 }
 ```
 
-- 원래는 모든 다크 스타일이 `@media (prefers-color-scheme: dark)`라 **브라우저 설정만 따랐고 버튼으로 바꿀 수 없었습니다.** 11개 파일의 다크 블록을 `:root[data-theme='dark'] .클래스` 선택자로 바꿨습니다.
-- `<style scoped>` 안에서도 **조상 선택자는 그대로 동작합니다.** scope id는 대상 클래스에만 붙기 때문입니다.
-- 대신 시스템 다크모드 자동 감지는 사라지고, 기본값이 라이트가 됩니다.
+- 18개 도시를 순서대로 부르면 그만큼 기다려야 해서, **`Promise.all`로 한꺼번에** 보냅니다.
+- 도시 지정은 좌표 대신 **`q=Seoul,KR` 형태의 도시명**을 씁니다. `,KR`을 붙이면 같은 이름의 해외 도시와 헷갈리지 않습니다.
+- 응답을 그대로 쓰지 않고 `toCityItem()`으로 **화면이 쓰던 모양으로 변환**합니다. 덕분에 기존 컴포넌트를 거의 고치지 않고 목 데이터를 실제 데이터로 갈아 끼울 수 있었습니다.
+- `weather[0].main`(`Clear` / `Rain` / `Snow` …)을 기존 이모지 상태로 매핑했습니다.
+- `isLoading` · `errorMessage`를 스토어가 들고 있어, 어느 화면에서든 같은 로딩 · 에러 표시를 씁니다.
 
-### 15. 즐겨찾기 · 방문 기록
+### 15. 추가 API — 예보 · 일출 · 관광지
+
+**24시간 예보** (`/data/2.5/forecast`) — 상세 페이지에서 도시가 정해질 때 1회 호출하고, 3시간 간격 목록에서 앞 8개만 씁니다.
+
+- 응답의 `dt_txt`는 **UTC 문자열**입니다. 그대로 잘라 쓰면 한국 시각보다 9시간 이르게 표시되므로, 유닉스 타임스탬프 `dt`를 `new Date(dt * 1000)`으로 변환했습니다.
+- 뒤쪽 칸은 내일 시간대라 헷갈리기 쉬워서 시각 위에 오늘 / 내일 라벨을 붙였습니다.
+- 아이콘은 `weather[0].icon` 코드를 `https://openweathermap.org/img/wn/{code}@2x.png`에 끼워 넣습니다. 키가 필요 없는 정적 이미지라 호출 수에 잡히지 않습니다.
+
+**일출 · 일몰** — 별도 API 없이 현재 날씨 응답의 `sys.sunrise` / `sys.sunset`을 씁니다. 역시 유닉스 타임스탬프라 같은 방식으로 변환합니다.
+
+**주변 관광지** (한국관광공사 `locationBasedList2`) — 좌표를 따로 준비하지 않고, 날씨 응답의 `coord.lat` / `coord.lon`을 그대로 넘깁니다.
+
+```js
+// stores/tourStore.js
+params: {
+  serviceKey: API_KEY,
+  mapX: city.lon, mapY: city.lat, radius: 20000,
+  contentTypeId: 12,  // 관광지
+  arrange: 'E',       // 거리순
+  numOfRows: 5, pageNo: 1,
+  MobileOS: 'ETC', MobileApp: 'SkalaWeather', _type: 'json',
+}
+```
+
+- 인터넷 예제에 많은 `KorService1`은 **폐기**되었습니다. `KorService2` + `locationBasedList2`를 써야 합니다.
+- `arrange`를 `Q`(수정일순)로 두면 서울에서 외곽 산이 먼저 나옵니다. **`E`(거리순)** 로 바꾸니 덕수궁 · 청계광장 같은 도심 명소가 나옵니다.
+- 하드코딩해 두었던 관광지 목록을 지우고 이 응답(`title` · `addr1` · `firstimage` · `dist`)으로 교체했습니다.
+- 공공데이터포털 API는 **CORS가 열려 있지 않아** 브라우저에서 직접 못 부릅니다. `vite.config.js`에 개발용 프록시를 두고 `/tour-api`로 우회합니다.
+
+```js
+server: {
+  proxy: {
+    '/tour-api': {
+      target: 'https://apis.data.go.kr',
+      changeOrigin: true,
+      rewrite: (path) => path.replace(/^\/tour-api/, ''),
+    },
+  },
+},
+```
+
+- 이 프록시는 `npm run dev`에서만 동작합니다. 배포 시에는 별도 대응이 필요합니다.
+
+### 16. 즐겨찾기 · 방문 기록
 
 ```js
 // stores/historyStore.js
@@ -456,4 +520,3 @@ const addHistory = (cityId) => {
 - 기록은 상세 페이지 `onMounted`에서 남기고, 메인은 `v-if="historyStore.hasHistory"`로 기록이 있을 때만 카드를 띄웁니다.
 - 즐겨찾기 별은 카드 클릭과 겹치므로 `@click.stop`이 필요합니다. 필터는 기존 검색 · 온도 조건에 `matchFavorite` 한 줄을 더해 처리했습니다.
 - 두 스토어 모두 새로고침하면 초기화됩니다. 교안의 `authStore`처럼 `localStorage`를 붙이면 유지할 수 있습니다.
-

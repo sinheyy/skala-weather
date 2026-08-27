@@ -1,50 +1,45 @@
 <script setup>
-import { computed } from 'vue'
-
-const props = defineProps({
+defineProps({
   city: { type: Object, default: null },
   spots: { type: Array, default: () => [] },
-})
-
-const spotInfo = computed(() => props.spots.find((item) => item.city === props.city.name) ?? null)
-
-const spotTip = computed(() => {
-  if (props.city.precipitation > 0) {
-    return '비 소식이 있어요. 실내 관광지 위주로 도는 걸 추천해요.'
-  }
-
-  if (props.city.temp >= 30) {
-    return '한낮에는 더우니 아침이나 저녁 일정으로 잡아 보세요.'
-  }
-
-  return '비 걱정은 없어요. 야외 일정을 넉넉히 잡아도 좋아요.'
+  isLoading: { type: Boolean, default: false },
+  errorMessage: { type: String, default: '' },
 })
 </script>
 
 <template>
-  <template v-if="city && spotInfo">
-    <p class="spot-intro">
-      <b class="spot-city">{{ city.name }}</b
-      >, {{ spotInfo.intro }}
-    </p>
-
-    <ol class="spot-list">
-      <li class="spot-item" v-for="(spot, index) in spotInfo.spots" :key="spot">
-        <span class="spot-no">{{ index + 1 }}</span>
-        <span class="spot-name">{{ spot }}</span>
-      </li>
-    </ol>
-
-    <p class="spot-tip">
-      <span class="spot-tip__icon" aria-hidden="true">💡</span>
-      {{ spotTip }}
-    </p>
-  </template>
-
-  <p class="spot-empty" v-else>
-    <span class="spot-empty__icon" aria-hidden="true">🧭</span>
+  <p class="spot-msg" v-if="!city">
+    <span class="spot-msg__icon" aria-hidden="true">🧭</span>
     도시를 선택하면 가볼 만한 곳을 알려드려요.
   </p>
+
+  <p class="spot-msg" v-else-if="isLoading">🧭 주변 관광지를 불러오는 중입니다...</p>
+
+  <p class="spot-msg" v-else-if="errorMessage">{{ errorMessage }}</p>
+
+  <template v-else-if="spots.length > 0">
+    <p class="spot-intro">
+      <b class="spot-city">{{ city.name }}</b> 주변에서 가볼 만한 곳이에요.
+    </p>
+
+    <ul class="spot-list">
+      <li class="spot-item" v-for="item in spots" :key="item.id">
+        <img class="spot-image" v-if="item.image" :src="item.image" :alt="item.title" />
+        <span class="spot-image spot-image--empty" v-else aria-hidden="true">🏞️</span>
+
+        <div class="spot-body">
+          <h3 class="spot-name">{{ item.title }}</h3>
+          <p class="spot-address">{{ item.address }}</p>
+        </div>
+
+        <span class="spot-distance">{{ item.distance }}km</span>
+      </li>
+    </ul>
+
+    <p class="spot-source">한국관광공사 관광정보 서비스 제공</p>
+  </template>
+
+  <p class="spot-msg" v-else>주변에서 찾은 관광지가 없어요.</p>
 </template>
 
 <style scoped>
@@ -72,49 +67,65 @@ const spotTip = computed(() => {
 .spot-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 11px 12px;
+  gap: 12px;
+  padding: 10px 12px;
   border: 1px solid var(--divider);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--card-bg);
 }
 
-.spot-no {
+.spot-image {
   flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: var(--panel-bg);
+}
+
+.spot-image--empty {
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 8px;
-  background: rgba(19, 62, 102, 0.1);
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--text-soft);
+  font-size: 1.4rem;
+}
+
+.spot-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .spot-name {
-  font-size: 0.92rem;
-  font-weight: 600;
+  font-size: 0.94rem;
+  font-weight: 700;
   color: var(--text-strong);
 }
 
-.spot-tip {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px dashed var(--divider);
-  font-size: 0.8rem;
-  line-height: 1.6;
+.spot-address {
+  font-size: 0.76rem;
+  line-height: 1.4;
   color: var(--text-soft);
 }
 
-.spot-tip__icon {
+.spot-distance {
   flex: none;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-soft);
 }
 
-.spot-empty {
+.spot-source {
+  margin-top: 10px;
+  font-size: 0.7rem;
+  text-align: right;
+  color: var(--text-soft);
+  opacity: 0.8;
+}
+
+.spot-msg {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -127,11 +138,7 @@ const spotTip = computed(() => {
   color: var(--text-soft);
 }
 
-.spot-empty__icon {
+.spot-msg__icon {
   font-size: 1.3rem;
-}
-
-:root[data-theme='dark'] .spot-no {
-  background: rgba(255, 255, 255, 0.1);
 }
 </style>

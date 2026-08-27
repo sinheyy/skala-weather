@@ -1,15 +1,14 @@
 <script setup>
-import { watchEffect } from 'vue'
+import { onMounted } from 'vue'
 
-import { useConfigStore } from '@/stores/configStore'
+import { useWeatherStore } from '@/stores/weatherStore'
 import NavigationBar from '@/components/exercise/NavigationBar.vue'
 import UnitToggler from '@/components/exercise/UnitToggler.vue'
-import ThemeToggler from '@/components/exercise/ThemeToggler.vue'
 
-const configStore = useConfigStore()
+const weatherStore = useWeatherStore()
 
-watchEffect(() => {
-  document.documentElement.setAttribute('data-theme', configStore.theme)
+onMounted(() => {
+  weatherStore.fetchWeatherList()
 })
 </script>
 
@@ -18,10 +17,7 @@ watchEffect(() => {
     <header class="app-top">
       <NavigationBar />
 
-      <div class="app-tools">
-        <ThemeToggler />
-        <UnitToggler />
-      </div>
+      <UnitToggler />
     </header>
 
     <main class="app-main">
@@ -39,13 +35,6 @@ watchEffect(() => {
   gap: 22px;
   padding: clamp(20px, 4vw, 48px);
   padding-bottom: 96px;
-}
-
-.app-tools {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-bottom: 8px;
 }
 
 .app-top {

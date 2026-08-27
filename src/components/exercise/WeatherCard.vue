@@ -245,21 +245,23 @@ const hotStandard = computed(() => (configStore.unit === 'fahrenheit' ? 77 : 25)
   transform: scale(0.98);
 }
 
-:root[data-theme='dark'] .temp-badge--hot {
-  background: rgba(255, 153, 94, 0.18);
-  color: #ffb488;
-}
+@media (prefers-color-scheme: dark) {
+  .temp-badge--hot {
+    background: rgba(255, 153, 94, 0.18);
+    color: #ffb488;
+  }
 
-:root[data-theme='dark'] .temp-badge--cool {
-  background: rgba(124, 192, 247, 0.18);
-  color: #9fd0fb;
-}
+  .temp-badge--cool {
+    background: rgba(124, 192, 247, 0.18);
+    color: #9fd0fb;
+  }
 
-:root[data-theme='dark'] .city-card:hover {
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5);
-}
+  .city-card:hover {
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5);
+  }
 
-:root[data-theme='dark'] .detail-btn {
-  color: #08192b;
+  .detail-btn {
+    color: #08192b;
+  }
 }
 </style>

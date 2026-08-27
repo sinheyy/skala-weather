@@ -3,6 +3,7 @@ import { ref, computed, watch, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { useFavoriteStore } from '@/stores/favoriteStore'
+import { useWeatherStore } from '@/stores/weatherStore'
 import { useHistoryStore } from '@/stores/historyStore'
 
 import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
@@ -14,6 +15,7 @@ import RankingBoard from '@/components/exercise/RankingBoard.vue'
 
 const router = useRouter()
 const favoriteStore = useFavoriteStore()
+const weatherStore = useWeatherStore()
 const historyStore = useHistoryStore()
 
 const keyword = ref('')
@@ -21,37 +23,17 @@ const selectedCity = ref('')
 const onlyHot = ref(false)
 const onlyFavorite = ref(false)
 
-const weatherList = ref([
-  { id: 'city_01', name: '서울', temp: 32, humidity: 50, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_02', name: '경기', temp: 30, humidity: 58, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_03', name: '대전', temp: 28, humidity: 60, precipitation: 0, status: '🌥️구름' },
-  { id: 'city_04', name: '부산', temp: 26, humidity: 70, precipitation: 60, status: '🌧️비' },
-  { id: 'city_05', name: '제주', temp: 31, humidity: 45, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_06', name: '인천', temp: 27, humidity: 65, precipitation: 10, status: '🌧️비' },
-  { id: 'city_07', name: '광주', temp: 33, humidity: 48, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_08', name: '강원', temp: 24, humidity: 55, precipitation: 0, status: '🌥️구름' },
-  { id: 'city_09', name: '대구', temp: 35, humidity: 42, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_10', name: '울산', temp: 29, humidity: 63, precipitation: 5, status: '🌥️구름' },
-  { id: 'city_11', name: '세종', temp: 29, humidity: 57, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_12', name: '충북', temp: 28, humidity: 61, precipitation: 15, status: '🌧️비' },
-  { id: 'city_13', name: '충남', temp: 27, humidity: 64, precipitation: 20, status: '🌧️비' },
-  { id: 'city_14', name: '전북', temp: 30, humidity: 59, precipitation: 0, status: '🌥️구름' },
-  { id: 'city_15', name: '전남', temp: 31, humidity: 66, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_16', name: '경북', temp: 23, humidity: 52, precipitation: 0, status: '🌥️구름' },
-  { id: 'city_17', name: '경남', temp: 25, humidity: 68, precipitation: 35, status: '🌧️비' },
-  { id: 'city_18', name: '울릉도', temp: 22, humidity: 75, precipitation: 45, status: '🌧️비' },
-])
-
 const weatherRecommend = [
   { status: '☀️맑음', recommend: '햇볕이 강해요. 물을 많이 마시세요!' },
   { status: '🌥️구름', recommend: '날이 흐립니다. 외투를 챙기세요!' },
   { status: '🌧️비', recommend: '비가 와요. 우산을 챙기세요!' },
+  { status: '❄️눈', recommend: '눈이 옵니다. 미끄러우니 조심하세요!' },
 ]
 
 const filteredWeatherList = computed(() => {
   const trimKeyword = keyword.value.trim()
 
-  return weatherList.value.filter((item) => {
+  return weatherStore.weatherList.filter((item) => {
     const matchKeyword = !trimKeyword || item.name.includes(trimKeyword)
     const matchHot = !onlyHot.value || item.temp >= 25
     const matchFavorite = !onlyFavorite.value || favoriteStore.isFavorite(item.id)
@@ -62,7 +44,7 @@ const filteredWeatherList = computed(() => {
 
 const historyCities = computed(() =>
   historyStore.historyIds
-    .map((id) => weatherList.value.find((item) => item.id === id))
+    .map((id) => weatherStore.weatherList.find((item) => item.id === id))
     .filter((item) => item),
 )
 
@@ -71,7 +53,7 @@ const selected = computed(() =>
 )
 
 const selectedCityData = computed(
-  () => weatherList.value.find((item) => item.name === selectedCity.value) ?? null,
+  () => weatherStore.weatherList.find((item) => item.name === selectedCity.value) ?? null,
 )
 
 const clickCity = (cityName) => {
@@ -164,7 +146,13 @@ watchEffect(() => {
           </button>
         </div>
 
-        <div class="city-grid" v-if="filteredWeatherList.length > 0">
+        <p class="empty" v-if="weatherStore.isLoading">🛰️ 실시간 날씨를 불러오는 중입니다...</p>
+
+        <p class="empty" v-else-if="weatherStore.errorMessage">
+          {{ weatherStore.errorMessage }}
+        </p>
+
+        <div class="city-grid" v-else-if="filteredWeatherList.length > 0">
           <WeatherCard
             v-for="item in filteredWeatherList"
             :key="item.id"
@@ -187,7 +175,7 @@ watchEffect(() => {
         </BaseDashboardCard>
 
         <BaseDashboardCard title="전국 랭킹">
-          <RankingBoard :cities="weatherList" />
+          <RankingBoard :cities="weatherStore.weatherList" />
         </BaseDashboardCard>
       </aside>
     </div>

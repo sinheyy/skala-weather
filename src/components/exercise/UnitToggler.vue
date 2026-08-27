@@ -20,6 +20,7 @@ const configStore = useConfigStore()
   display: flex;
   align-items: center;
   gap: 10px;
+  padding-bottom: 8px;
 }
 
 .unit-status {
@@ -62,7 +63,9 @@ const configStore = useConfigStore()
   outline-offset: 3px;
 }
 
-:root[data-theme='dark'] .unit-btn {
-  color: #08192b;
+@media (prefers-color-scheme: dark) {
+  .unit-btn {
+    color: #08192b;
+  }
 }
 </style>

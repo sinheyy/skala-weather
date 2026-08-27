@@ -168,23 +168,25 @@ const rainyCityCount = computed(() => {
   color: var(--text-soft);
 }
 
-:root[data-theme='dark'] .rank-no {
-  background: rgba(255, 255, 255, 0.1);
-}
+@media (prefers-color-scheme: dark) {
+  .rank-no {
+    background: rgba(255, 255, 255, 0.1);
+  }
 
-:root[data-theme='dark'] .rank-no--top {
-  color: #08192b;
-}
+  .rank-no--top {
+    color: #08192b;
+  }
 
-:root[data-theme='dark'] .rank-list {
-  scrollbar-color: rgba(255, 255, 255, 0.26) transparent;
-}
+  .rank-list {
+    scrollbar-color: rgba(255, 255, 255, 0.26) transparent;
+  }
 
-:root[data-theme='dark'] .rank-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.26);
-}
+  .rank-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.26);
+  }
 
-:root[data-theme='dark'] .rank-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.4);
+  .rank-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+  }
 }
 </style>

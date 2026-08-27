@@ -1,8 +1,11 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import axios from 'axios'
 
 import { useConfigStore } from '@/stores/configStore'
+import { useWeatherStore } from '@/stores/weatherStore'
+import { useTourStore } from '@/stores/tourStore'
 import { useFavoriteStore } from '@/stores/favoriteStore'
 import { useHistoryStore } from '@/stores/historyStore'
 import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
@@ -10,135 +13,69 @@ import LifeIndexPanel from '@/components/exercise/LifeIndexPanel.vue'
 import OutfitPanel from '@/components/exercise/OutfitPanel.vue'
 import TravelSpotPanel from '@/components/exercise/TravelSpotPanel.vue'
 
+const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY
+const FORECAST_URL = 'https://api.openweathermap.org/data/2.5/forecast'
+
 const route = useRoute()
 const configStore = useConfigStore()
 const favoriteStore = useFavoriteStore()
 const historyStore = useHistoryStore()
-
-const weatherList = [
-  { id: 'city_01', name: '서울', temp: 32, humidity: 50, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_02', name: '경기', temp: 30, humidity: 58, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_03', name: '대전', temp: 28, humidity: 60, precipitation: 0, status: '🌥️구름' },
-  { id: 'city_04', name: '부산', temp: 26, humidity: 70, precipitation: 60, status: '🌧️비' },
-  { id: 'city_05', name: '제주', temp: 31, humidity: 45, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_06', name: '인천', temp: 27, humidity: 65, precipitation: 10, status: '🌧️비' },
-  { id: 'city_07', name: '광주', temp: 33, humidity: 48, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_08', name: '강원', temp: 24, humidity: 55, precipitation: 0, status: '🌥️구름' },
-  { id: 'city_09', name: '대구', temp: 35, humidity: 42, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_10', name: '울산', temp: 29, humidity: 63, precipitation: 5, status: '🌥️구름' },
-  { id: 'city_11', name: '세종', temp: 29, humidity: 57, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_12', name: '충북', temp: 28, humidity: 61, precipitation: 15, status: '🌧️비' },
-  { id: 'city_13', name: '충남', temp: 27, humidity: 64, precipitation: 20, status: '🌧️비' },
-  { id: 'city_14', name: '전북', temp: 30, humidity: 59, precipitation: 0, status: '🌥️구름' },
-  { id: 'city_15', name: '전남', temp: 31, humidity: 66, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_16', name: '경북', temp: 23, humidity: 52, precipitation: 0, status: '🌥️구름' },
-  { id: 'city_17', name: '경남', temp: 25, humidity: 68, precipitation: 35, status: '🌧️비' },
-  { id: 'city_18', name: '울릉도', temp: 22, humidity: 75, precipitation: 45, status: '🌧️비' },
-]
+const weatherStore = useWeatherStore()
+const tourStore = useTourStore()
 
 const weatherRecommend = [
   { status: '☀️맑음', recommend: '햇볕이 강해요. 물을 많이 마시세요!' },
   { status: '🌥️구름', recommend: '날이 흐립니다. 외투를 챙기세요!' },
   { status: '🌧️비', recommend: '비가 와요. 우산을 챙기세요!' },
+  { status: '❄️눈', recommend: '눈이 옵니다. 미끄러우니 조심하세요!' },
 ]
 
-const travelSpots = [
-  {
-    city: '서울',
-    intro: '고궁과 야경이 함께 있는 도시',
-    spots: ['경복궁', 'N서울타워', '한강공원'],
-  },
-  {
-    city: '경기',
-    intro: '서울 근교로 당일치기 하기 좋은 곳',
-    spots: ['수원화성', '에버랜드', '두물머리'],
-  },
-  {
-    city: '대전',
-    intro: '빵과 호수로 유명한 과학 도시',
-    spots: ['성심당', '한밭수목원', '대청호'],
-  },
-  {
-    city: '부산',
-    intro: '바다와 야경이 좋은 항구 도시',
-    spots: ['해운대', '감천문화마을', '광안리'],
-  },
-  {
-    city: '제주',
-    intro: '어디를 가도 바다가 보이는 섬',
-    spots: ['성산일출봉', '우도', '협재해수욕장'],
-  },
-  {
-    city: '인천',
-    intro: '바다와 신도시가 함께 있는 관문 도시',
-    spots: ['월미도', '차이나타운', '송도센트럴파크'],
-  },
-  {
-    city: '광주',
-    intro: '예술과 미식이 있는 도시',
-    spots: ['무등산', '양림동 근대역사마을', '국립아시아문화전당'],
-  },
-  {
-    city: '강원',
-    intro: '산과 바다를 하루에 볼 수 있는 곳',
-    spots: ['설악산', '속초해변', '남이섬'],
-  },
-  {
-    city: '대구',
-    intro: '골목마다 이야기가 있는 도시',
-    spots: ['팔공산', '서문시장', '김광석다시그리기길'],
-  },
-  {
-    city: '울산',
-    intro: '해돋이가 가장 먼저 닿는 도시',
-    spots: ['대왕암공원', '태화강 국가정원', '간절곶'],
-  },
-  {
-    city: '세종',
-    intro: '넓은 공원이 매력인 계획도시',
-    spots: ['세종호수공원', '국립세종수목원', '금강보행교'],
-  },
-  { city: '충북', intro: '내륙의 산수 풍경이 좋은 곳', spots: ['도담삼봉', '속리산', '청남대'] },
-  {
-    city: '충남',
-    intro: '백제의 흔적이 남아 있는 지역',
-    spots: ['공산성', '궁남지', '대천해수욕장'],
-  },
-  {
-    city: '전북',
-    intro: '한옥과 맛집이 가득한 여행지',
-    spots: ['전주한옥마을', '내장산', '군산 근대문화거리'],
-  },
-  {
-    city: '전남',
-    intro: '느리게 걷기 좋은 남도 풍경',
-    spots: ['순천만습지', '여수 밤바다', '죽녹원'],
-  },
-  {
-    city: '경북',
-    intro: '천년 고도의 역사가 살아 있는 곳',
-    spots: ['불국사', '안동 하회마을', '주왕산'],
-  },
-  {
-    city: '경남',
-    intro: '바다를 따라 도는 드라이브 코스',
-    spots: ['통영 동피랑', '진주성', '거제 바람의언덕'],
-  },
-  {
-    city: '울릉도',
-    intro: '배를 타고 떠나는 화산섬 여행',
-    spots: ['도동해안산책로', '나리분지', '관음도'],
-  },
-]
+const city = computed(() => weatherStore.findCity(route.params.cityId))
 
-const city = ref(null)
+const forecastList = ref([])
+const isForecastLoading = ref(false)
+const forecastError = ref('')
 
-onMounted(() => {
-  city.value = weatherList.find((item) => item.id === route.params.cityId) ?? null
+const fetchForecast = async () => {
+  if (!city.value) {
+    return
+  }
 
+  isForecastLoading.value = true
+  forecastError.value = ''
+
+  try {
+    const response = await axios.get(FORECAST_URL, {
+      params: { q: city.value.query, appid: API_KEY, units: 'metric', lang: 'kr' },
+    })
+
+    forecastList.value = response.data.list.slice(0, 8)
+  } catch (error) {
+    console.error('예보 데이터를 가져오지 못했습니다:', error)
+    forecastError.value = '예보를 불러오지 못했어요.'
+  } finally {
+    isForecastLoading.value = false
+  }
+}
+
+const loadCityData = () => {
   if (city.value) {
     historyStore.addHistory(city.value.id)
+    fetchForecast()
+    tourStore.fetchSpots(city.value)
   }
+}
+
+watch(city, () => {
+  loadCityData()
+})
+
+onMounted(() => {
+  if (weatherStore.weatherList.length === 0) {
+    weatherStore.fetchWeatherList()
+  }
+
+  loadCityData()
 })
 
 const recommend = computed(() => {
@@ -147,19 +84,32 @@ const recommend = computed(() => {
   return found ? found.recommend : '추천 정보가 없는 날씨예요.'
 })
 
-const displayTemp = computed(() => {
-  const rawTemp = city.value.temp
+const toClock = (unixSeconds) =>
+  new Date(unixSeconds * 1000).toLocaleTimeString('ko-KR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 
+const toDayLabel = (unixSeconds) => {
+  const target = new Date(unixSeconds * 1000)
+  const today = new Date()
+
+  return target.getDate() === today.getDate() ? '오늘' : '내일'
+}
+
+const toDisplayTemp = (rawTemp) => {
   if (configStore.unit === 'fahrenheit') {
     return Math.round((rawTemp * 9) / 5 + 32)
   }
 
   return rawTemp
-})
+}
+
+const displayTemp = computed(() => toDisplayTemp(city.value.temp))
 
 const averageTemp = computed(() => {
-  const total = weatherList.reduce((sum, item) => sum + item.temp, 0)
-  const rawAverage = total / weatherList.length
+  const total = weatherStore.weatherList.reduce((sum, item) => sum + item.temp, 0)
+  const rawAverage = total / weatherStore.weatherList.length
 
   if (configStore.unit === 'fahrenheit') {
     return (rawAverage * 9) / 5 + 32
@@ -169,6 +119,25 @@ const averageTemp = computed(() => {
 })
 
 const tempGap = computed(() => (displayTemp.value - averageTemp.value).toFixed(1))
+
+const forecastRows = computed(() =>
+  forecastList.value.map((item) => {
+    const rawTemp = item.main.temp
+
+    return {
+      dt: item.dt,
+      day: toDayLabel(item.dt),
+      time: toClock(item.dt),
+      icon: item.weather[0].icon,
+      description: item.weather[0].description,
+      rainRate: Math.round(item.pop * 100),
+      temp:
+        configStore.unit === 'fahrenheit'
+          ? Math.round((rawTemp * 9) / 5 + 32)
+          : Math.round(rawTemp),
+    }
+  }),
+)
 
 const hotStandard = computed(() => (configStore.unit === 'fahrenheit' ? 77 : 25))
 </script>
@@ -200,7 +169,7 @@ const hotStandard = computed(() => (configStore.unit === 'fahrenheit' ? 77 : 25)
       <BaseDashboardCard title="현재 날씨">
         <div class="summary">
           <div class="summary-main">
-            <p class="summary-status">{{ city.status }}</p>
+            <p class="summary-status">{{ city.status }} · {{ city.description }}</p>
             <p class="summary-temp">
               {{ displayTemp }}<span class="temp-unit">{{ configStore.unitSymbol }}</span>
             </p>
@@ -215,12 +184,24 @@ const hotStandard = computed(() => (configStore.unit === 'fahrenheit' ? 77 : 25)
 
           <dl class="metrics">
             <div class="metric">
+              <dt>체감온도</dt>
+              <dd>{{ toDisplayTemp(city.feelsLike) }}{{ configStore.unitSymbol }}</dd>
+            </div>
+            <div class="metric">
               <dt>습도</dt>
               <dd>{{ city.humidity }}%</dd>
             </div>
             <div class="metric">
               <dt>강수량</dt>
               <dd>{{ city.precipitation }}mm</dd>
+            </div>
+            <div class="metric">
+              <dt>바람</dt>
+              <dd>{{ city.windSpeed }}m/s</dd>
+            </div>
+            <div class="metric">
+              <dt>기압</dt>
+              <dd>{{ city.pressure }}hPa</dd>
             </div>
             <div class="metric">
               <dt>전국 평균 대비</dt>
@@ -235,6 +216,42 @@ const hotStandard = computed(() => (configStore.unit === 'fahrenheit' ? 77 : 25)
         </p>
       </BaseDashboardCard>
 
+      <BaseDashboardCard title="오늘의 해">
+        <div class="sun-row">
+          <div class="sun-item">
+            <span class="sun-icon" aria-hidden="true">🌅</span>
+            <p class="sun-name">일출</p>
+            <p class="sun-time">{{ toClock(city.sunrise) }}</p>
+          </div>
+
+          <div class="sun-item">
+            <span class="sun-icon" aria-hidden="true">🌇</span>
+            <p class="sun-name">일몰</p>
+            <p class="sun-time">{{ toClock(city.sunset) }}</p>
+          </div>
+        </div>
+      </BaseDashboardCard>
+
+      <BaseDashboardCard title="24시간 예보">
+        <p class="forecast-msg" v-if="isForecastLoading">🛰️ 예보를 불러오는 중입니다...</p>
+
+        <p class="forecast-msg" v-else-if="forecastError">{{ forecastError }}</p>
+
+        <div class="forecast-row" v-else>
+          <div class="forecast-item" v-for="item in forecastRows" :key="item.dt">
+            <p class="forecast-day">{{ item.day }}</p>
+            <p class="forecast-time">{{ item.time }}</p>
+            <img
+              class="forecast-icon"
+              :src="`https://openweathermap.org/img/wn/${item.icon}@2x.png`"
+              :alt="item.description"
+            />
+            <p class="forecast-temp">{{ item.temp }}{{ configStore.unitSymbol }}</p>
+            <p class="forecast-rain">💧 {{ item.rainRate }}%</p>
+          </div>
+        </div>
+      </BaseDashboardCard>
+
       <BaseDashboardCard title="생활지수">
         <LifeIndexPanel :city="city" />
       </BaseDashboardCard>
@@ -244,9 +261,18 @@ const hotStandard = computed(() => (configStore.unit === 'fahrenheit' ? 77 : 25)
       </BaseDashboardCard>
 
       <BaseDashboardCard title="가볼 만한 곳">
-        <TravelSpotPanel :city="city" :spots="travelSpots" />
+        <TravelSpotPanel
+          :city="city"
+          :spots="tourStore.spotList"
+          :is-loading="tourStore.isLoading"
+          :error-message="tourStore.errorMessage"
+        />
       </BaseDashboardCard>
     </template>
+
+    <p class="forecast-msg" v-else-if="weatherStore.isLoading">
+      🛰️ 실시간 날씨를 불러오는 중입니다...
+    </p>
 
     <div class="not-found" v-else>
       <p class="not-found-title">도시를 찾을 수 없습니다</p>
@@ -394,7 +420,7 @@ const hotStandard = computed(() => (configStore.unit === 'fahrenheit' ? 77 : 25)
 
 .metrics {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
   gap: 8px;
   margin: 0;
 }
@@ -441,6 +467,101 @@ const hotStandard = computed(() => (configStore.unit === 'fahrenheit' ? 77 : 25)
   flex: none;
 }
 
+.sun-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.sun-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  border: 1px solid var(--divider);
+  border-radius: 14px;
+  background: var(--card-bg);
+  text-align: center;
+}
+
+.sun-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.sun-name {
+  font-size: 0.72rem;
+  color: var(--text-soft);
+}
+
+.sun-time {
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--text-strong);
+}
+
+.forecast-msg {
+  padding: 24px 12px;
+  border: 1px dashed var(--divider);
+  border-radius: 14px;
+  font-size: 0.85rem;
+  text-align: center;
+  color: var(--text-soft);
+}
+
+.forecast-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.forecast-item {
+  flex: none;
+  width: 84px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 6px;
+  border: 1px solid var(--divider);
+  border-radius: 14px;
+  background: var(--card-bg);
+}
+
+.forecast-day {
+  font-size: 0.68rem;
+  color: var(--text-soft);
+  opacity: 0.8;
+}
+
+.forecast-time {
+  font-size: 0.76rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-soft);
+}
+
+.forecast-icon {
+  width: 46px;
+  height: 46px;
+}
+
+.forecast-temp {
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-strong);
+}
+
+.forecast-rain {
+  font-size: 0.7rem;
+  color: var(--text-soft);
+}
+
 .not-found {
   display: flex;
   flex-direction: column;
@@ -468,13 +589,15 @@ const hotStandard = computed(() => (configStore.unit === 'fahrenheit' ? 77 : 25)
   color: var(--text-strong);
 }
 
-:root[data-theme='dark'] .temp-badge--hot {
-  background: rgba(255, 153, 94, 0.18);
-  color: #ffb488;
-}
+@media (prefers-color-scheme: dark) {
+  .temp-badge--hot {
+    background: rgba(255, 153, 94, 0.18);
+    color: #ffb488;
+  }
 
-:root[data-theme='dark'] .temp-badge--cool {
-  background: rgba(124, 192, 247, 0.18);
-  color: #9fd0fb;
+  .temp-badge--cool {
+    background: rgba(124, 192, 247, 0.18);
+    color: #9fd0fb;
+  }
 }
 </style>

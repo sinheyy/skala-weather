@@ -1,122 +1,16 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
+import { useWeatherStore } from '@/stores/weatherStore'
+import { useTourStore } from '@/stores/tourStore'
 import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
 import OutfitPanel from '@/components/exercise/OutfitPanel.vue'
 import TravelSpotPanel from '@/components/exercise/TravelSpotPanel.vue'
 
 const router = useRouter()
-
-const weatherList = [
-  { id: 'city_01', name: '서울', temp: 32, humidity: 50, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_02', name: '경기', temp: 30, humidity: 58, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_03', name: '대전', temp: 28, humidity: 60, precipitation: 0, status: '🌥️구름' },
-  { id: 'city_04', name: '부산', temp: 26, humidity: 70, precipitation: 60, status: '🌧️비' },
-  { id: 'city_05', name: '제주', temp: 31, humidity: 45, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_06', name: '인천', temp: 27, humidity: 65, precipitation: 10, status: '🌧️비' },
-  { id: 'city_07', name: '광주', temp: 33, humidity: 48, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_08', name: '강원', temp: 24, humidity: 55, precipitation: 0, status: '🌥️구름' },
-  { id: 'city_09', name: '대구', temp: 35, humidity: 42, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_10', name: '울산', temp: 29, humidity: 63, precipitation: 5, status: '🌥️구름' },
-  { id: 'city_11', name: '세종', temp: 29, humidity: 57, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_12', name: '충북', temp: 28, humidity: 61, precipitation: 15, status: '🌧️비' },
-  { id: 'city_13', name: '충남', temp: 27, humidity: 64, precipitation: 20, status: '🌧️비' },
-  { id: 'city_14', name: '전북', temp: 30, humidity: 59, precipitation: 0, status: '🌥️구름' },
-  { id: 'city_15', name: '전남', temp: 31, humidity: 66, precipitation: 0, status: '☀️맑음' },
-  { id: 'city_16', name: '경북', temp: 23, humidity: 52, precipitation: 0, status: '🌥️구름' },
-  { id: 'city_17', name: '경남', temp: 25, humidity: 68, precipitation: 35, status: '🌧️비' },
-  { id: 'city_18', name: '울릉도', temp: 22, humidity: 75, precipitation: 45, status: '🌧️비' },
-]
-
-const travelSpots = [
-  {
-    city: '서울',
-    intro: '고궁과 야경이 함께 있는 도시',
-    spots: ['경복궁', 'N서울타워', '한강공원'],
-  },
-  {
-    city: '경기',
-    intro: '서울 근교로 당일치기 하기 좋은 곳',
-    spots: ['수원화성', '에버랜드', '두물머리'],
-  },
-  {
-    city: '대전',
-    intro: '빵과 호수로 유명한 과학 도시',
-    spots: ['성심당', '한밭수목원', '대청호'],
-  },
-  {
-    city: '부산',
-    intro: '바다와 야경이 좋은 항구 도시',
-    spots: ['해운대', '감천문화마을', '광안리'],
-  },
-  {
-    city: '제주',
-    intro: '어디를 가도 바다가 보이는 섬',
-    spots: ['성산일출봉', '우도', '협재해수욕장'],
-  },
-  {
-    city: '인천',
-    intro: '바다와 신도시가 함께 있는 관문 도시',
-    spots: ['월미도', '차이나타운', '송도센트럴파크'],
-  },
-  {
-    city: '광주',
-    intro: '예술과 미식이 있는 도시',
-    spots: ['무등산', '양림동 근대역사마을', '국립아시아문화전당'],
-  },
-  {
-    city: '강원',
-    intro: '산과 바다를 하루에 볼 수 있는 곳',
-    spots: ['설악산', '속초해변', '남이섬'],
-  },
-  {
-    city: '대구',
-    intro: '골목마다 이야기가 있는 도시',
-    spots: ['팔공산', '서문시장', '김광석다시그리기길'],
-  },
-  {
-    city: '울산',
-    intro: '해돋이가 가장 먼저 닿는 도시',
-    spots: ['대왕암공원', '태화강 국가정원', '간절곶'],
-  },
-  {
-    city: '세종',
-    intro: '넓은 공원이 매력인 계획도시',
-    spots: ['세종호수공원', '국립세종수목원', '금강보행교'],
-  },
-  { city: '충북', intro: '내륙의 산수 풍경이 좋은 곳', spots: ['도담삼봉', '속리산', '청남대'] },
-  {
-    city: '충남',
-    intro: '백제의 흔적이 남아 있는 지역',
-    spots: ['공산성', '궁남지', '대천해수욕장'],
-  },
-  {
-    city: '전북',
-    intro: '한옥과 맛집이 가득한 여행지',
-    spots: ['전주한옥마을', '내장산', '군산 근대문화거리'],
-  },
-  {
-    city: '전남',
-    intro: '느리게 걷기 좋은 남도 풍경',
-    spots: ['순천만습지', '여수 밤바다', '죽녹원'],
-  },
-  {
-    city: '경북',
-    intro: '천년 고도의 역사가 살아 있는 곳',
-    spots: ['불국사', '안동 하회마을', '주왕산'],
-  },
-  {
-    city: '경남',
-    intro: '바다를 따라 도는 드라이브 코스',
-    spots: ['통영 동피랑', '진주성', '거제 바람의언덕'],
-  },
-  {
-    city: '울릉도',
-    intro: '배를 타고 떠나는 화산섬 여행',
-    spots: ['도동해안산책로', '나리분지', '관음도'],
-  },
-]
+const weatherStore = useWeatherStore()
+const tourStore = useTourStore()
 
 const tempPick = ref('cool')
 const rainPick = ref('dry')
@@ -135,15 +29,19 @@ const getScore = (city) => {
 }
 
 const scoreRankList = computed(() =>
-  weatherList
+  weatherStore.weatherList
     .map((item) => ({ ...item, score: getScore(item) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 5),
 )
 
-const bestCity = computed(() => scoreRankList.value[0])
+const bestCity = computed(() => scoreRankList.value[0] ?? null)
 
 const bestComment = computed(() => {
+  if (!bestCity.value) {
+    return ''
+  }
+
   if (bestCity.value.score >= 80) {
     return '지금 당장 떠나도 좋은 날씨예요!'
   }
@@ -168,7 +66,21 @@ const showDetail = (cityId) => {
 }
 
 watch(bestCity, (newValue, oldValue) => {
-  console.log(`[watch👀-bestCity] 1위 변경: ${oldValue.name} -> ${newValue.name}`)
+  if (!newValue) {
+    return
+  }
+
+  if (oldValue) {
+    console.log(`[watch👀-bestCity] 1위 변경: ${oldValue.name} -> ${newValue.name}`)
+  }
+
+  tourStore.fetchSpots(newValue)
+})
+
+onMounted(() => {
+  if (bestCity.value) {
+    tourStore.fetchSpots(bestCity.value)
+  }
 })
 
 watch(pickSummary, (newValue) => {
@@ -256,20 +168,29 @@ watch(pickSummary, (newValue) => {
     </BaseDashboardCard>
 
     <BaseDashboardCard title="오늘의 추천 여행지">
-      <div class="best">
-        <div class="best-info">
-          <p class="best-crown" aria-hidden="true">👑</p>
-          <p class="best-name">{{ bestCity.name }}</p>
-          <p class="best-comment">{{ bestComment }}</p>
+      <template v-if="bestCity">
+        <div class="best">
+          <div class="best-info">
+            <p class="best-crown" aria-hidden="true">👑</p>
+            <p class="best-name">{{ bestCity.name }}</p>
+            <p class="best-comment">{{ bestComment }}</p>
+          </div>
+          <p class="best-score">{{ bestCity.score }}<span class="best-unit">점</span></p>
         </div>
-        <p class="best-score">{{ bestCity.score }}<span class="best-unit">점</span></p>
-      </div>
 
-      <OutfitPanel :city="bestCity" />
+        <OutfitPanel :city="bestCity" />
+      </template>
+
+      <p class="empty" v-else>날씨 데이터를 불러오는 중입니다.</p>
     </BaseDashboardCard>
 
-    <BaseDashboardCard title="가볼 만한 곳">
-      <TravelSpotPanel :city="bestCity" :spots="travelSpots" />
+    <BaseDashboardCard title="가볼 만한 곳" v-if="bestCity">
+      <TravelSpotPanel
+        :city="bestCity"
+        :spots="tourStore.spotList"
+        :is-loading="tourStore.isLoading"
+        :error-message="tourStore.errorMessage"
+      />
     </BaseDashboardCard>
 
     <BaseDashboardCard title="여행 점수 TOP 5">
@@ -437,6 +358,15 @@ watch(pickSummary, (newValue) => {
   color: var(--text-soft);
 }
 
+.empty {
+  padding: 26px 12px;
+  border: 1px dashed var(--divider);
+  border-radius: 14px;
+  font-size: 0.85rem;
+  text-align: center;
+  color: var(--text-soft);
+}
+
 .score-list {
   display: flex;
   flex-direction: column;
@@ -536,19 +466,21 @@ watch(pickSummary, (newValue) => {
   color: var(--text-strong);
 }
 
-:root[data-theme='dark'] .pick-btn--on {
-  color: #08192b;
-}
+@media (prefers-color-scheme: dark) {
+  .pick-btn--on {
+    color: #08192b;
+  }
 
-:root[data-theme='dark'] .score-no {
-  background: rgba(255, 255, 255, 0.1);
-}
+  .score-no {
+    background: rgba(255, 255, 255, 0.1);
+  }
 
-:root[data-theme='dark'] .score-no--top {
-  color: #08192b;
-}
+  .score-no--top {
+    color: #08192b;
+  }
 
-:root[data-theme='dark'] .score-bar {
-  background: rgba(255, 255, 255, 0.12);
+  .score-bar {
+    background: rgba(255, 255, 255, 0.12);
+  }
 }
 </style>

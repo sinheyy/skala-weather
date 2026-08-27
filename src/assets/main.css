@@ -18,19 +18,21 @@ body {
   background-attachment: fixed;
 }
 
-:root[data-theme='dark'] {
-  --panel-bg: rgba(255, 255, 255, 0.07);
-  --panel-border: rgba(255, 255, 255, 0.13);
-  --card-bg: rgba(255, 255, 255, 0.08);
-  --divider: rgba(255, 255, 255, 0.12);
-  --text-strong: #e9f2fb;
-  --text-soft: rgba(233, 242, 251, 0.66);
-  --accent: #7cc0f7;
-}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --panel-bg: rgba(255, 255, 255, 0.07);
+    --panel-border: rgba(255, 255, 255, 0.13);
+    --card-bg: rgba(255, 255, 255, 0.08);
+    --divider: rgba(255, 255, 255, 0.12);
+    --text-strong: #e9f2fb;
+    --text-soft: rgba(233, 242, 251, 0.66);
+    --accent: #7cc0f7;
+  }
 
-:root[data-theme='dark'] body {
-  background:
-    radial-gradient(1000px 360px at 10% -12%, rgba(94, 150, 208, 0.35), transparent 62%),
-    linear-gradient(165deg, #10233c 0%, #17304f 48%, #0d1a2c 100%);
-  background-attachment: fixed;
+  body {
+    background:
+      radial-gradient(1000px 360px at 10% -12%, rgba(94, 150, 208, 0.35), transparent 62%),
+      linear-gradient(165deg, #10233c 0%, #17304f 48%, #0d1a2c 100%);
+    background-attachment: fixed;
+  }
 }

@@ -12,15 +12,5 @@ export const useConfigStore = defineStore('config', () => {
     unit.value = unit.value === 'celsius' ? 'fahrenheit' : 'celsius'
   }
 
-  const theme = ref('light')
-
-  const isDark = computed(() => theme.value === 'dark')
-
-  const themeIcon = computed(() => (isDark.value ? '🌙' : '☀️'))
-
-  const toggleTheme = () => {
-    theme.value = theme.value === 'light' ? 'dark' : 'light'
-  }
-
-  return { unit, unitSymbol, unitName, toggleUnit, theme, isDark, themeIcon, toggleTheme }
+  return { unit, unitSymbol, unitName, toggleUnit }
 })

@@ -9,6 +9,11 @@ lerna-debug.log*
 
 node_modules
 .DS_Store
+
+# 환경변수 (API Key)
+.env
+.env.*
+!.env.example
 dist
 dist-ssr
 coverage

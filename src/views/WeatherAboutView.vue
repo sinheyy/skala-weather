@@ -61,13 +61,25 @@ const features = [
     id: 'spot',
     icon: '🧭',
     name: '가볼 만한 곳',
-    desc: '지역별 대표 명소 세 곳과, 그날 날씨에 맞는 관광 팁을 함께 안내합니다.',
+    desc: '한국관광공사 관광정보로 그 도시 주변 관광지 다섯 곳을 사진 · 주소 · 거리와 함께 보여줍니다.',
   },
   {
     id: 'rank',
     icon: '🏆',
     name: '전국 랭킹',
     desc: '기온이 높은 상위 10개 지역과 전국 평균 기온, 비가 오는 지역 수를 보여줍니다.',
+  },
+  {
+    id: 'forecast',
+    icon: '🕒',
+    name: '24시간 예보',
+    desc: '3시간 간격으로 앞으로 24시간의 기온과 강수확률을 확인할 수 있습니다.',
+  },
+  {
+    id: 'sun',
+    icon: '🌅',
+    name: '오늘의 해',
+    desc: '지역별 일출 · 일몰 시각을 상세 페이지에서 함께 보여줍니다.',
   },
   {
     id: 'favorite',
@@ -90,11 +102,20 @@ const settings = [
     name: '날씨 단위',
     desc: '섭씨(℃)와 화씨(℉)를 전환합니다. 모든 화면의 기온 표시가 함께 바뀝니다.',
   },
+]
+
+const sources = [
   {
-    id: 'theme',
-    icon: '🌗',
-    name: '화면 테마',
-    desc: '라이트와 다크 모드를 직접 고를 수 있습니다.',
+    id: 'owm',
+    icon: '🛰️',
+    name: 'OpenWeatherMap',
+    desc: '전국 18개 도시의 실시간 날씨와 3시간 간격 예보, 일출 · 일몰 시각을 받아옵니다.',
+  },
+  {
+    id: 'tour',
+    icon: '🗺️',
+    name: '한국관광공사 관광정보',
+    desc: '공공데이터포털의 위치기반 관광정보로 도시 주변 관광지를 조회합니다.',
   },
 ]
 
@@ -113,8 +134,8 @@ const shortcuts = [
 
     <BaseDashboardCard title="SKALA WEATHER">
       <p class="lead">
-        전국 주요 지역의 날씨를 한 화면에서 확인하고, 오늘 무엇을 입고 어디에 가면 좋을지까지
-        알려주는 날씨 대시보드입니다.
+        전국 18개 도시의 <b>실시간 날씨</b>를 한 화면에서 확인하고, 오늘 무엇을 입고 어디에 가면
+        좋을지까지 알려주는 날씨 대시보드입니다.
       </p>
       <p class="lead-sub">
         기온과 습도, 강수량을 그냥 나열하는 대신 <b>빨래를 널어도 되는지</b>,
@@ -162,8 +183,20 @@ const shortcuts = [
 
       <p class="notice">
         <span class="notice-icon" aria-hidden="true">⚙️</span>
-        두 설정 모두 화면 오른쪽 위에 있고, 페이지를 옮겨 다녀도 그대로 유지됩니다.
+        날씨 단위는 화면 오른쪽 위에서 바꿀 수 있고, 페이지를 옮겨 다녀도 그대로 유지됩니다.
       </p>
+    </BaseDashboardCard>
+
+    <BaseDashboardCard title="데이터 출처">
+      <ul class="feature-list">
+        <li class="feature" v-for="item in sources" :key="item.id">
+          <span class="feature-icon" aria-hidden="true">{{ item.icon }}</span>
+          <div class="feature-body">
+            <h3 class="feature-name">{{ item.name }}</h3>
+            <p class="feature-desc">{{ item.desc }}</p>
+          </div>
+        </li>
+      </ul>
     </BaseDashboardCard>
 
     <BaseDashboardCard title="단축키">
@@ -419,7 +452,9 @@ const shortcuts = [
   outline-offset: 3px;
 }
 
-:root[data-theme='dark'] .home-btn {
-  color: #08192b;
+@media (prefers-color-scheme: dark) {
+  .home-btn {
+    color: #08192b;
+  }
 }
 </style>
