@@ -8,41 +8,61 @@ defineProps({
 </script>
 
 <template>
-  <p class="spot-msg" v-if="!city">
-    <span class="spot-msg__icon" aria-hidden="true">🧭</span>
-    도시를 선택하면 가볼 만한 곳을 알려드려요.
-  </p>
+  <el-empty v-if="!city" description="도시를 선택하면 가볼 만한 곳을 알려드려요" />
 
-  <p class="spot-msg" v-else-if="isLoading">🧭 주변 관광지를 불러오는 중입니다...</p>
+  <div
+    class="spot-box"
+    v-else
+    v-loading="isLoading"
+    element-loading-text="주변 관광지를 불러오는 중..."
+  >
+    <el-alert v-if="errorMessage" type="error" :title="errorMessage" :closable="false" show-icon />
 
-  <p class="spot-msg" v-else-if="errorMessage">{{ errorMessage }}</p>
+    <template v-else-if="spots.length > 0">
+      <p class="spot-intro">
+        <b class="spot-city">{{ city.name }}</b> 주변에서 가볼 만한 곳이에요.
+      </p>
 
-  <template v-else-if="spots.length > 0">
-    <p class="spot-intro">
-      <b class="spot-city">{{ city.name }}</b> 주변에서 가볼 만한 곳이에요.
-    </p>
+      <ul class="spot-list">
+        <li class="spot-item" v-for="item in spots" :key="item.id">
+          <div class="spot-thumb">
+            <el-image
+              class="spot-image"
+              v-if="item.image"
+              :src="item.image"
+              :alt="item.title"
+              fit="cover"
+              lazy
+            >
+              <template #error>
+                <span class="spot-fallback" aria-hidden="true">🏞️</span>
+              </template>
+            </el-image>
 
-    <ul class="spot-list">
-      <li class="spot-item" v-for="item in spots" :key="item.id">
-        <img class="spot-image" v-if="item.image" :src="item.image" :alt="item.title" />
-        <span class="spot-image spot-image--empty" v-else aria-hidden="true">🏞️</span>
+            <span class="spot-fallback" v-else aria-hidden="true">🏞️</span>
+          </div>
 
-        <div class="spot-body">
-          <h3 class="spot-name">{{ item.title }}</h3>
-          <p class="spot-address">{{ item.address }}</p>
-        </div>
+          <div class="spot-body">
+            <h3 class="spot-name">{{ item.title }}</h3>
+            <p class="spot-address">{{ item.address }}</p>
+          </div>
 
-        <span class="spot-distance">{{ item.distance }}km</span>
-      </li>
-    </ul>
+          <span class="spot-distance">{{ item.distance }}km</span>
+        </li>
+      </ul>
 
-    <p class="spot-source">한국관광공사 관광정보 서비스 제공</p>
-  </template>
+      <p class="spot-source">한국관광공사 관광정보 서비스 제공</p>
+    </template>
 
-  <p class="spot-msg" v-else>주변에서 찾은 관광지가 없어요.</p>
+    <el-empty v-else-if="!isLoading" description="주변에서 찾은 관광지가 없어요" />
+  </div>
 </template>
 
 <style scoped>
+.spot-box {
+  min-height: 160px;
+}
+
 .spot-intro {
   margin-bottom: 12px;
   font-size: 0.88rem;
@@ -74,18 +94,26 @@ defineProps({
   background: var(--card-bg);
 }
 
-.spot-image {
+.spot-thumb {
   flex: none;
   width: 56px;
   height: 56px;
   border-radius: 12px;
-  object-fit: cover;
+  overflow: hidden;
   background: var(--panel-bg);
 }
 
-.spot-image--empty {
+.spot-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.spot-fallback {
   display: grid;
   place-items: center;
+  width: 100%;
+  height: 100%;
   font-size: 1.4rem;
 }
 
@@ -123,22 +151,5 @@ defineProps({
   text-align: right;
   color: var(--text-soft);
   opacity: 0.8;
-}
-
-.spot-msg {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 26px 12px;
-  border: 1px dashed var(--divider);
-  border-radius: 14px;
-  font-size: 0.85rem;
-  text-align: center;
-  color: var(--text-soft);
-}
-
-.spot-msg__icon {
-  font-size: 1.3rem;
 }
 </style>

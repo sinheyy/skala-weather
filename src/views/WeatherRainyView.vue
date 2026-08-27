@@ -55,7 +55,9 @@ const showDetail = (cityId) => {
           @click-detail="showDetail"
         />
       </div>
-      <p class="empty" v-else>선택한 조건에 해당하는 지역이 없습니다.</p>
+      <el-skeleton v-else-if="weatherStore.isLoading" :rows="4" animated />
+
+      <el-empty v-else description="선택한 조건에 해당하는 지역이 없습니다" />
     </BaseDashboardCard>
   </div>
 </template>
@@ -126,14 +128,5 @@ const showDetail = (cityId) => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
   gap: 14px;
-}
-
-.empty {
-  padding: 26px 12px;
-  border: 1px dashed var(--divider);
-  border-radius: 14px;
-  font-size: 0.85rem;
-  text-align: center;
-  color: var(--text-soft);
 }
 </style>

@@ -233,21 +233,31 @@ const hotStandard = computed(() => (configStore.unit === 'fahrenheit' ? 77 : 25)
       </BaseDashboardCard>
 
       <BaseDashboardCard title="24시간 예보">
-        <p class="forecast-msg" v-if="isForecastLoading">🛰️ 예보를 불러오는 중입니다...</p>
+        <div
+          class="forecast-box"
+          v-loading="isForecastLoading"
+          element-loading-text="예보를 불러오는 중..."
+        >
+          <el-alert
+            v-if="forecastError"
+            type="error"
+            :title="forecastError"
+            :closable="false"
+            show-icon
+          />
 
-        <p class="forecast-msg" v-else-if="forecastError">{{ forecastError }}</p>
-
-        <div class="forecast-row" v-else>
-          <div class="forecast-item" v-for="item in forecastRows" :key="item.dt">
-            <p class="forecast-day">{{ item.day }}</p>
-            <p class="forecast-time">{{ item.time }}</p>
-            <img
-              class="forecast-icon"
-              :src="`https://openweathermap.org/img/wn/${item.icon}@2x.png`"
-              :alt="item.description"
-            />
-            <p class="forecast-temp">{{ item.temp }}{{ configStore.unitSymbol }}</p>
-            <p class="forecast-rain">💧 {{ item.rainRate }}%</p>
+          <div class="forecast-row" v-else>
+            <div class="forecast-item" v-for="item in forecastRows" :key="item.dt">
+              <p class="forecast-day">{{ item.day }}</p>
+              <p class="forecast-time">{{ item.time }}</p>
+              <img
+                class="forecast-icon"
+                :src="`https://openweathermap.org/img/wn/${item.icon}@2x.png`"
+                :alt="item.description"
+              />
+              <p class="forecast-temp">{{ item.temp }}{{ configStore.unitSymbol }}</p>
+              <p class="forecast-rain">💧 {{ item.rainRate }}%</p>
+            </div>
           </div>
         </div>
       </BaseDashboardCard>
@@ -270,17 +280,9 @@ const hotStandard = computed(() => (configStore.unit === 'fahrenheit' ? 77 : 25)
       </BaseDashboardCard>
     </template>
 
-    <p class="forecast-msg" v-else-if="weatherStore.isLoading">
-      🛰️ 실시간 날씨를 불러오는 중입니다...
-    </p>
+    <el-skeleton v-else-if="weatherStore.isLoading" :rows="6" animated />
 
-    <div class="not-found" v-else>
-      <p class="not-found-title">도시를 찾을 수 없습니다</p>
-      <p class="not-found-desc">
-        <b>{{ route.params.cityId }}</b
-        >에 해당하는 지역이 없어요.
-      </p>
-    </div>
+    <el-empty v-else :description="`'${route.params.cityId}'에 해당하는 지역이 없어요`" />
   </div>
 </template>
 
@@ -503,13 +505,8 @@ const hotStandard = computed(() => (configStore.unit === 'fahrenheit' ? 77 : 25)
   color: var(--text-strong);
 }
 
-.forecast-msg {
-  padding: 24px 12px;
-  border: 1px dashed var(--divider);
-  border-radius: 14px;
-  font-size: 0.85rem;
-  text-align: center;
-  color: var(--text-soft);
+.forecast-box {
+  min-height: 128px;
 }
 
 .forecast-row {
@@ -560,33 +557,6 @@ const hotStandard = computed(() => (configStore.unit === 'fahrenheit' ? 77 : 25)
 .forecast-rain {
   font-size: 0.7rem;
   color: var(--text-soft);
-}
-
-.not-found {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 60px 20px;
-  border: 1px dashed var(--divider);
-  border-radius: 20px;
-  text-align: center;
-}
-
-.not-found-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-strong);
-}
-
-.not-found-desc {
-  font-size: 0.88rem;
-  color: var(--text-soft);
-}
-
-.not-found-desc b {
-  font-weight: 700;
-  color: var(--text-strong);
 }
 
 @media (prefers-color-scheme: dark) {

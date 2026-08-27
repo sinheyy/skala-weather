@@ -8,6 +8,14 @@
   --text-strong: #12314f;
   --text-soft: #4c6d8c;
   --accent: #1f74c9;
+
+  --el-color-primary: var(--accent);
+  --el-text-color-primary: var(--text-strong);
+  --el-text-color-regular: var(--text-soft);
+  --el-text-color-secondary: var(--text-soft);
+  --el-border-color-light: var(--divider);
+  --el-border-radius-base: 12px;
+  --el-font-family: inherit;
 }
 
 body {
@@ -20,6 +28,15 @@ body {
 
 @media (prefers-color-scheme: dark) {
   :root {
+    --el-bg-color: #16283f;
+    --el-mask-color: rgba(16, 35, 60, 0.85);
+    --el-bg-color-overlay: #16283f;
+    --el-fill-color: rgba(255, 255, 255, 0.08);
+    --el-fill-color-light: rgba(255, 255, 255, 0.06);
+    --el-fill-color-blank: transparent;
+    --el-border-color: rgba(255, 255, 255, 0.14);
+    --el-border-color-lighter: rgba(255, 255, 255, 0.1);
+
     --panel-bg: rgba(255, 255, 255, 0.07);
     --panel-border: rgba(255, 255, 255, 0.13);
     --card-bg: rgba(255, 255, 255, 0.08);

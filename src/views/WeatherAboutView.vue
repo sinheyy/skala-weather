@@ -141,6 +141,9 @@ const shortcuts = [
         기온과 습도, 강수량을 그냥 나열하는 대신 <b>빨래를 널어도 되는지</b>,
         <b>오늘 어디로 떠나면 좋을지</b> 같은 실제 판단으로 바꿔서 보여줘요.
       </p>
+      <p class="lead-sub">
+        로딩 표시와 알림, 빈 화면 안내에는 <b>Element Plus</b> 컴포넌트를 사용했습니다.
+      </p>
     </BaseDashboardCard>
 
     <BaseDashboardCard title="페이지 안내">

@@ -181,7 +181,7 @@ watch(pickSummary, (newValue) => {
         <OutfitPanel :city="bestCity" />
       </template>
 
-      <p class="empty" v-else>날씨 데이터를 불러오는 중입니다.</p>
+      <el-skeleton v-else :rows="4" animated />
     </BaseDashboardCard>
 
     <BaseDashboardCard title="가볼 만한 곳" v-if="bestCity">
@@ -355,15 +355,6 @@ watch(pickSummary, (newValue) => {
   margin-left: 3px;
   font-size: 1rem;
   font-weight: 600;
-  color: var(--text-soft);
-}
-
-.empty {
-  padding: 26px 12px;
-  border: 1px dashed var(--divider);
-  border-radius: 14px;
-  font-size: 0.85rem;
-  text-align: center;
   color: var(--text-soft);
 }
 

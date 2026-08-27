@@ -9,7 +9,7 @@ const toSpotItem = (item) => ({
   id: item.contentid,
   title: item.title,
   address: item.addr1,
-  image: item.firstimage,
+  image: item.firstimage ? item.firstimage.replace('http://', 'https://') : '',
   distance: (item.dist / 1000).toFixed(1),
 })
 

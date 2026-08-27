@@ -6,7 +6,7 @@ const props = defineProps({
 })
 
 const laundryIndex = computed(() => {
-  if (props.city.temp >= 23 && props.city.humidity <= 55 && props.city.precipitation <= 0) {
+  if (props.city.temp >= 23 && props.city.humidity <= 60 && props.city.precipitation <= 0) {
     return '추천👍'
   }
 
@@ -73,10 +73,7 @@ const umbrellaIndex = computed(() => {
     </p>
   </template>
 
-  <p class="side-empty" v-else>
-    <span class="side-empty__icon" aria-hidden="true">👆</span>
-    도시를 선택하면 생활지수를 보여드려요.
-  </p>
+  <el-empty v-else description="도시를 선택하면 생활지수를 보여드려요" :image-size="60" />
 </template>
 
 <style scoped>
@@ -136,23 +133,6 @@ const umbrellaIndex = computed(() => {
 
 .side-target {
   color: var(--text-strong);
-}
-
-.side-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 26px 12px;
-  border: 1px dashed var(--divider);
-  border-radius: 14px;
-  font-size: 0.85rem;
-  text-align: center;
-  color: var(--text-soft);
-}
-
-.side-empty__icon {
-  font-size: 1.3rem;
 }
 
 @media (prefers-color-scheme: dark) {

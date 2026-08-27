@@ -1,7 +1,7 @@
-# Hands on - Weather Axios
+# Hands on - Weather UI Library
 
 - **과목명** : Front-framework: Vue.js
-- **실습과제** : Hands on - Weather Mockup → Composition → Component → Router → Store → Axios
+- **실습과제** : Hands on - Weather Mockup → Composition → Component → Router → Store → Axios → UI Library
 - **프로젝트명** : skala-weather
 
 한 파일(`App.vue`)에 몰려 있던 날씨 목업을 **재사용 가능한 컴포넌트로 분리**하고,
@@ -10,6 +10,7 @@ Slot으로 공통 패널 디자인을 하나로 묶고, Props / Emits로 부모�
 여기에 **Pinia 전역 스토어**로 단위 · 즐겨찾기 · 방문 기록을 모든 화면이 함께 쓰도록 했고,
 **Axios**로 OpenWeatherMap과 한국관광공사 관광정보를 연동해 화면을 실제 데이터로 채웠습니다.
 **키보드 단축키**와 **직접 만든 화면 두 개**(여행지 추천 · 비 소식)도 더했습니다.
+마지막으로 **Element Plus**를 부분 적용해 로딩 · 알림 · 빈 상태 표현을 정리했습니다.
 
 ---
 
@@ -84,6 +85,99 @@ App.vue (셸)
 ```
 
 ---
+
+## Hands on 단계별 진행
+
+각 단계의 과제 요구사항과, 이 프로젝트에서 무엇이 바뀌었는지 정리했습니다.
+
+### 1. Weather Mockup — Vue Syntax
+
+| 요구사항                                  | 구현                                                                                   |
+| ----------------------------------------- | -------------------------------------------------------------------------------------- |
+| 배열 렌더링 (`v-for`, `:key`에 id)        | 날씨 카드 반복 출력                                                                    |
+| 조건부 렌더링 (`v-if`) — 25도 기준 라벨   | 🔥 더움 / ❄️ 선선함 배지                                                               |
+| 양방향 바인딩 + 한글 (`:value`, `@input`) | 도시 검색 입력, 입력한 도시명 출력                                                     |
+| 이벤트 · 수식어                           | 카드 클릭 시 상태바 표기, [상세보기]는 `@click.stop`으로 버블링 차단 후 `window.alert` |
+| 본인 데이터 · Mockup 추가                 | 습도 · 강수량 필드 추가, 전국 18개 지역으로 확장                                       |
+
+### 2. Weather Composition — Composition API
+
+| 요구사항                                      | 구현                                             |
+| --------------------------------------------- | ------------------------------------------------ |
+| 반응형 상태 3종                               | `keyword`, `selectedCity`, `weatherList`         |
+| `computed` 필터링                             | `filteredWeatherList`                            |
+| `watch` · `watchEffect` 감시                  | 상태바 문구 변화 / 검색어 추적 콘솔 로그         |
+| 검색 결과 3분기 표시                          | 검색어 없음 · 일치 · 결과 없음                   |
+| **본인만의 반응형 변수 · computed · watcher** | `onlyHot` — 더운 지역만 보기 토글 + 전용 `watch` |
+
+### 3. Weather Component — 기능 변경 없이 컴포넌트 분리
+
+| 요구사항                       | 구현                                                                   |
+| ------------------------------ | ---------------------------------------------------------------------- |
+| 부모가 모든 반응형 데이터 보유 | `WeatherHomeView`가 상태 소유                                          |
+| 공통 패널 (`<slot>`)           | `BaseDashboardCard`                                                    |
+| 검색바 (props ↓ / emits ↑)     | `SearchBar` — `keyword` / `update-query`                               |
+| 날씨 카드 (객체 props + emits) | `WeatherCard` — `select-card`, `click-detail`, `show-recommend`        |
+| 컴포넌트별 `<style scoped>`    | 전 컴포넌트 적용                                                       |
+| **본인 추가 컴포넌트**         | `LifeIndexPanel`(생활지수), `RankingBoard`(전국 랭킹), `NavigationBar` |
+
+### 4. Weather Router — 페이지 분리
+
+| 요구사항                                   | 구현                                               |
+| ------------------------------------------ | -------------------------------------------------- |
+| 지연 로딩 · Catch-all Route                | 전 라우트 `() => import(...)`, `/:pathMatch(.*)*`  |
+| `App.vue`에 네비게이션 + `RouterView`      | `NavigationBar` + `<RouterView />`                 |
+| 홈 뷰가 부모 컴포넌트 대체, **alert 제거** | `window.alert` → `router.push({ name: 'detail' })` |
+| 상세 뷰 — `:cityId` 동적 라우트            | `route.params.cityId`로 도시 조회                  |
+| 서비스 소개 페이지                         | `WeatherAboutView`                                 |
+| **본인 추가 view**                         | `/rainy` 비 소식, `/travel` 여행지 추천            |
+
+여기에 교안의 키보드 수식어를 활용해 검색창 단축키(`Enter` · `Esc`)를 더했습니다.
+
+### 5. Weather Store — Pinia
+
+| 요구사항                                                                    | 구현                                                    |
+| --------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `configStore.js` — state `unit` / getter `unitSymbol` / action `toggleUnit` | 그대로 작성                                             |
+| `UnitToggler.vue`를 네비게이션 옆 배치                                      | `App.vue` 상단 헤더 우측                                |
+| 메인 · 상세에 단위 설정 적용                                                | 카드 · 상세 · 전국 랭킹까지 반영                        |
+| **본인 추가 Store**                                                         | `favoriteStore`(즐겨찾기), `historyStore`(최근 본 지역) |
+
+이 단계에서 네 뷰에 중복돼 있던 날씨 배열의 문제가 드러났지만, 실제 통합은 다음 단계에서 이뤄집니다.
+
+### 6. Weather Axios — 실제 데이터 연동
+
+| 요구사항                      | 구현                                                        |
+| ----------------------------- | ----------------------------------------------------------- |
+| OpenWeatherMap 실제 날씨 적용 | `weatherStore.fetchWeatherList()` — 18개 도시 `Promise.all` |
+| **OpenWeatherMap 추가 API**   | 5일/3시간 예보(`/forecast`) → 상세 페이지 24시간 예보       |
+| **기타 외부 API**             | 한국관광공사 관광정보(`locationBasedList2`) → 가볼 만한 곳  |
+
+가장 크게 바뀐 단계입니다.
+
+- 네 뷰에 복사돼 있던 목 데이터가 **`weatherStore` 한 곳으로** 합쳐졌습니다.
+- 상세 페이지 조회가 `onMounted` + `ref`에서 **`computed`로** 바뀌었습니다. API 응답이 나중에 도착하면 마운트 시점엔 목록이 비어 있기 때문입니다.
+- 하드코딩했던 관광지 목록(18개 × 3곳)을 지우고 API 응답으로 교체했습니다.
+- 별도 API 없이 응답에 들어 있던 `sys.sunrise` / `sys.sunset`으로 일출 · 일몰도 표시합니다.
+
+### 7. Weather UI Library — Element Plus 부분 적용
+
+| 요구사항                         | 구현                                                    |
+| -------------------------------- | ------------------------------------------------------- |
+| 외부 UI Library 선정 · 자유 적용 | Element Plus — 로딩 · 알림 · 빈 상태 · 에러 표현만 교체 |
+
+- Mockup 단계에서 넣었던 `window.alert`이 이 단계에서 **`ElMessage` 토스트**로 바뀌며 완전히 사라졌습니다.
+- 레이아웃과 폼은 손대지 않아 기존 디자인을 유지했습니다.
+
+### 단계를 가로지르는 변화
+
+| 항목          | 흐름                                                                      |
+| ------------- | ------------------------------------------------------------------------- |
+| 날씨 데이터   | 뷰 안 배열 → 네 뷰에 중복 → `weatherStore` → **OpenWeatherMap 실시간**    |
+| 관광지 데이터 | 하드코딩 18개 × 3곳 → **한국관광공사 API**                                |
+| 상세 조회     | `onMounted` + `ref` → **`computed`**                                      |
+| 알림          | `window.alert` → 상세는 `router.push`, 추천은 **`ElMessage`**             |
+| 상태 표현     | 직접 만든 문구 · 점선 박스 → **`el-skeleton` · `el-empty` · `v-loading`** |
 
 ## 구현 내용
 
@@ -520,3 +614,20 @@ const addHistory = (cityId) => {
 - 기록은 상세 페이지 `onMounted`에서 남기고, 메인은 `v-if="historyStore.hasHistory"`로 기록이 있을 때만 카드를 띄웁니다.
 - 즐겨찾기 별은 카드 클릭과 겹치므로 `@click.stop`이 필요합니다. 필터는 기존 검색 · 온도 조건에 `matchFavorite` 한 줄을 더해 처리했습니다.
 - 두 스토어 모두 새로고침하면 초기화됩니다. 교안의 `authStore`처럼 `localStorage`를 붙이면 유지할 수 있습니다.
+
+### 17. UI 라이브러리 (`Element Plus`)
+
+교안이 비교한 5개(PrimeVue · Vuetify · Element Plus · Ant Design Vue · Quasar) 중 **Element Plus**를 골랐습니다.
+
+**적용 범위 — 부분 적용**
+
+레이아웃(`el-card`, `el-row`/`el-col`)과 폼(`el-input`, `el-select`)은 손대지 않았습니다. 이미 만들어 둔 디자인을 버리지 않기 위해, **직접 만들기 번거로웠던 상태 표현만** 교체했습니다.
+
+| 컴포넌트      | 사용처                                            | 대체한 것           |
+| ------------- | ------------------------------------------------- | ------------------- |
+| `ElMessage`   | 홈 — 날씨 상태 버튼                               | **`window.alert`**  |
+| `v-loading`   | 상세 — 24시간 예보 · 가볼 만한 곳                 | 로딩 문구           |
+| `el-skeleton` | 홈 · 상세 · 비 소식 · 여행지 추천                 | 로딩 문구           |
+| `el-empty`    | 생활지수 · 옷차림 · 관광지 · 검색결과 · 없는 도시 | 직접 만든 점선 박스 |
+| `el-alert`    | 홈 · 예보 · 관광지 조회 실패                      | 에러 텍스트         |
+| `el-image`    | 관광지 사진 (`lazy` + `#error` 슬롯)              | `<img>`             |

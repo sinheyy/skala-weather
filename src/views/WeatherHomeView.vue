@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 
 import { useFavoriteStore } from '@/stores/favoriteStore'
 import { useWeatherStore } from '@/stores/weatherStore'
@@ -62,7 +63,12 @@ const clickCity = (cityName) => {
 
 const showRecommend = (status) => {
   const found = weatherRecommend.find((item) => item.status === status)
-  window.alert(found ? found.recommend : '추천 정보가 없는 날씨예요.')
+
+  if (found) {
+    ElMessage.success(found.recommend)
+  } else {
+    ElMessage.info('추천 정보가 없는 날씨예요.')
+  }
 }
 
 const selectFirstCity = () => {
@@ -146,11 +152,15 @@ watchEffect(() => {
           </button>
         </div>
 
-        <p class="empty" v-if="weatherStore.isLoading">🛰️ 실시간 날씨를 불러오는 중입니다...</p>
+        <el-skeleton class="grid-skeleton" v-if="weatherStore.isLoading" :rows="6" animated />
 
-        <p class="empty" v-else-if="weatherStore.errorMessage">
-          {{ weatherStore.errorMessage }}
-        </p>
+        <el-alert
+          v-else-if="weatherStore.errorMessage"
+          type="error"
+          :title="weatherStore.errorMessage"
+          :closable="false"
+          show-icon
+        />
 
         <div class="city-grid" v-else-if="filteredWeatherList.length > 0">
           <WeatherCard
@@ -162,7 +172,7 @@ watchEffect(() => {
             @show-recommend="showRecommend"
           ></WeatherCard>
         </div>
-        <p class="empty" v-else>조건에 맞는 검색 결과가 없습니다.</p>
+        <el-empty v-else description="조건에 맞는 검색 결과가 없습니다" />
       </BaseDashboardCard>
 
       <aside class="side-panel">
@@ -279,13 +289,8 @@ watchEffect(() => {
   cursor: pointer;
 }
 
-.empty {
-  padding: 26px 12px;
-  border: 1px dashed var(--divider);
-  border-radius: 14px;
-  font-size: 0.85rem;
-  text-align: center;
-  color: var(--text-soft);
+.grid-skeleton {
+  padding: 8px 4px;
 }
 
 .city-grid {
