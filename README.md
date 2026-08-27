@@ -3,6 +3,8 @@
 - **과목명** : Front-framework: Vue.js
 - **프로젝트명** : skala-weather
 
+<img width="1669" height="929" alt="실행화면" src="https://github.com/user-attachments/assets/2a1d7c93-8aa1-4268-8fde-9c5263a46e77" />
+
 ---
 
 ## 페이지 구성
