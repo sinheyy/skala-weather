@@ -1,6 +1,8 @@
 <template>
   <nav class="nav-bar">
     <RouterLink class="nav-link" to="/">HOME</RouterLink>
+    <RouterLink class="nav-link" to="/rainy">RAINY</RouterLink>
+    <RouterLink class="nav-link" to="/travel">TRAVEL</RouterLink>
     <RouterLink class="nav-link" to="/about">ABOUT</RouterLink>
   </nav>
 </template>

@@ -3,7 +3,7 @@ defineProps({
   keyword: { type: String, default: '' },
 })
 
-defineEmits(['update-query'])
+defineEmits(['update-query', 'select-first'])
 </script>
 
 <template>
@@ -14,9 +14,13 @@ defineEmits(['update-query'])
       type="text"
       :value="keyword"
       @input="$emit('update-query', $event.target.value)"
+      @keyup.enter="$emit('select-first')"
+      @keyup.esc="$emit('update-query', '')"
       placeholder="검색할 도시 이름 입력"
     />
   </div>
+
+  <p class="search-hint"><kbd>Enter</kbd> 첫 번째 도시 선택 · <kbd>Esc</kbd> 검색어 지우기</p>
 
   <p class="search-status">
     검색 중인 도시: <span class="search-keyword">{{ keyword }}</span>
@@ -62,8 +66,28 @@ defineEmits(['update-query'])
   color: var(--text-soft);
 }
 
+.search-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  font-size: 0.76rem;
+  color: var(--text-soft);
+}
+
+.search-hint kbd {
+  padding: 2px 6px;
+  border: 1px solid var(--divider);
+  border-radius: 6px;
+  background: var(--card-bg);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
 .search-status {
-  margin-top: 12px;
+  margin-top: 8px;
   font-size: 0.88rem;
   color: var(--text-soft);
 }

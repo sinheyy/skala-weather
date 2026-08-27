@@ -1,37 +1,79 @@
 <script setup>
 import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
 
+const pages = [
+  {
+    id: 'home',
+    path: '/',
+    icon: '🏠',
+    name: '날씨 대시보드',
+    desc: '전국 18개 지역의 날씨를 카드로 보고, 카드를 누르면 생활지수와 추천이 함께 바뀝니다.',
+  },
+  {
+    id: 'travel',
+    path: '/travel',
+    icon: '🧳',
+    name: '여행지 추천',
+    desc: '원하는 날씨 조건을 고르면 점수를 계산해 오늘 가기 좋은 지역을 뽑아 줍니다.',
+  },
+  {
+    id: 'rainy',
+    path: '/rainy',
+    icon: '☂️',
+    name: '비 소식',
+    desc: '비가 오는 지역만 모아 강수량이 많은 순서로 보여줍니다.',
+  },
+  {
+    id: 'detail',
+    path: '/weather/city_01',
+    icon: '📍',
+    name: '지역 상세',
+    desc: '카드의 [상세보기]를 누르면 이동합니다. 주소의 도시 코드로 해당 지역을 찾아 보여줘요.',
+  },
+]
+
 const features = [
   {
     id: 'search',
     icon: '🔍',
     name: '도시 검색',
-    desc: '도시 이름을 입력하면 목록이 바로 좁혀집니다. 검색어에 따라 아래 카드가 실시간으로 갱신돼요.',
+    desc: '한글로 도시 이름을 입력하면 카드 목록이 바로 좁혀집니다. 단축키도 함께 지원해요.',
   },
   {
-    id: 'cards',
-    icon: '🗺️',
-    name: '지역별 날씨 현황',
-    desc: '전국 18개 지역의 기온 · 습도 · 강수량을 카드로 한눈에 봅니다. 25도를 기준으로 더움 / 선선함을 구분해 표시해요.',
+    id: 'hot',
+    icon: '🔥',
+    name: '더운 지역만 보기',
+    desc: '버튼 하나로 25도 이상인 지역만 골라 봅니다. 검색어와 함께 적용됩니다.',
   },
   {
     id: 'index',
     icon: '🧺',
     name: '생활지수',
-    desc: '카드를 선택하면 그 도시의 기온 · 습도 · 강수량으로 빨래 · 세차 · 우산 지수를 계산해 알려줍니다.',
+    desc: '선택한 도시의 기온 · 습도 · 강수량으로 빨래 · 세차 · 우산 지수를 계산합니다.',
+  },
+  {
+    id: 'outfit',
+    icon: '👕',
+    name: '옷차림 · 메뉴 추천',
+    desc: '기온과 강수량에 맞춰 오늘 입을 옷과 먹을 메뉴를 골라 줍니다.',
+  },
+  {
+    id: 'spot',
+    icon: '🧭',
+    name: '가볼 만한 곳',
+    desc: '지역별 대표 명소 세 곳과, 그날 날씨에 맞는 관광 팁을 함께 안내합니다.',
   },
   {
     id: 'rank',
-    icon: '🔥',
+    icon: '🏆',
     name: '전국 랭킹',
-    desc: '기온이 높은 상위 10개 지역과 전국 평균 기온, 비가 오는 지역 수를 함께 보여줍니다.',
+    desc: '기온이 높은 상위 10개 지역과 전국 평균 기온, 비가 오는 지역 수를 보여줍니다.',
   },
 ]
 
-const stacks = [
-  { id: 'vue', name: 'Vue 3', desc: 'Composition API · <script setup>' },
-  { id: 'router', name: 'Vue Router', desc: '라우팅 · 코드 분할' },
-  { id: 'vite', name: 'Vite', desc: '개발 서버 · 번들링' },
+const shortcuts = [
+  { id: 'enter', key: 'Enter', desc: '검색 결과의 첫 번째 도시를 바로 선택합니다.' },
+  { id: 'esc', key: 'Esc', desc: '입력한 검색어를 한 번에 지웁니다.' },
 ]
 </script>
 
@@ -44,13 +86,28 @@ const stacks = [
 
     <BaseDashboardCard title="SKALA WEATHER">
       <p class="lead">
-        전국 주요 지역의 날씨를 한 화면에서 확인하고, 오늘 무엇을 하면 좋을지까지 알려주는 날씨
-        대시보드입니다.
+        전국 주요 지역의 날씨를 한 화면에서 확인하고, 오늘 무엇을 입고 어디에 가면 좋을지까지
+        알려주는 날씨 대시보드입니다.
       </p>
       <p class="lead-sub">
         기온과 습도, 강수량을 그냥 나열하는 대신 <b>빨래를 널어도 되는지</b>,
-        <b>세차를 해도 되는지</b> 같은 실제 판단으로 바꿔서 보여주는 데 초점을 맞췄어요.
+        <b>오늘 어디로 떠나면 좋을지</b> 같은 실제 판단으로 바꿔서 보여줘요.
       </p>
+    </BaseDashboardCard>
+
+    <BaseDashboardCard title="페이지 안내">
+      <ul class="page-list">
+        <li v-for="item in pages" :key="item.id">
+          <RouterLink class="page-item" :to="item.path">
+            <span class="page-icon" aria-hidden="true">{{ item.icon }}</span>
+            <div class="page-body">
+              <h3 class="page-name">{{ item.name }}</h3>
+              <p class="page-desc">{{ item.desc }}</p>
+            </div>
+            <span class="page-arrow" aria-hidden="true">→</span>
+          </RouterLink>
+        </li>
+      </ul>
     </BaseDashboardCard>
 
     <BaseDashboardCard title="주요 기능">
@@ -65,17 +122,17 @@ const stacks = [
       </ul>
     </BaseDashboardCard>
 
-    <BaseDashboardCard title="만든 방식">
-      <dl class="stack-grid">
-        <div class="stack" v-for="item in stacks" :key="item.id">
-          <dt>{{ item.name }}</dt>
-          <dd>{{ item.desc }}</dd>
-        </div>
-      </dl>
+    <BaseDashboardCard title="단축키">
+      <ul class="shortcut-list">
+        <li class="shortcut" v-for="item in shortcuts" :key="item.id">
+          <kbd class="shortcut-key">{{ item.key }}</kbd>
+          <p class="shortcut-desc">{{ item.desc }}</p>
+        </li>
+      </ul>
 
       <p class="notice">
-        <span class="notice-icon" aria-hidden="true">ℹ️</span>
-        학습용으로 만든 프로젝트라 날씨 정보는 실제 관측값이 아닌 샘플 데이터입니다.
+        <span class="notice-icon" aria-hidden="true">⌨️</span>
+        단축키는 메인 대시보드의 도시 검색창에 커서가 있을 때 동작합니다.
       </p>
     </BaseDashboardCard>
 
@@ -129,6 +186,108 @@ const stacks = [
   color: var(--text-strong);
 }
 
+.page-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.page-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--divider);
+  border-radius: 14px;
+  background: var(--card-bg);
+  text-decoration: none;
+  transition:
+    border-color 0.2s ease,
+    transform 0.15s ease;
+}
+
+.page-item:hover {
+  border-color: var(--accent);
+  transform: translateX(3px);
+}
+
+.page-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.page-icon {
+  flex: none;
+  font-size: 1.2rem;
+}
+
+.page-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.page-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+.page-desc {
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--text-soft);
+}
+
+.page-arrow {
+  flex: none;
+  font-size: 0.9rem;
+  color: var(--text-soft);
+}
+
+.shortcut-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shortcut {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--divider);
+  border-radius: 14px;
+  background: var(--card-bg);
+}
+
+.shortcut-key {
+  flex: none;
+  min-width: 58px;
+  padding: 5px 10px;
+  border: 1px solid var(--divider);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-strong);
+}
+
+.shortcut-desc {
+  font-size: 0.86rem;
+  color: var(--text-soft);
+}
+
 .feature-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -168,35 +327,6 @@ const stacks = [
 .feature-desc {
   font-size: 0.86rem;
   line-height: 1.6;
-  color: var(--text-soft);
-}
-
-.stack-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 8px;
-  margin: 0;
-}
-
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 14px;
-  border: 1px solid var(--divider);
-  border-radius: 14px;
-  background: var(--card-bg);
-}
-
-.stack dt {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--text-strong);
-}
-
-.stack dd {
-  margin: 0;
-  font-size: 0.78rem;
   color: var(--text-soft);
 }
 
