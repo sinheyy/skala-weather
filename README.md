@@ -113,6 +113,29 @@
 | 알림          | `window.alert` → 상세는 `router.push`, 추천은 **`ElMessage`**             |
 | 상태 표현     | 직접 만든 문구 · 점선 박스 → **`el-skeleton` · `el-empty` · `v-loading`** |
 
+## 배포 (Vercel)
+
+정적 빌드 결과물을 Vercel에 배포했습니다. 배포하면서 로컬에서는 드러나지 않던 문제 세 가지를 만났고, 해결 과정에서 **AI의 도움을 받았습니다.**
+
+### 1. 새로고침하면 404
+
+`nalssi.vercel.app/weather/city_02`에서 새로고침하면 Vercel의 `404: NOT_FOUND`가 떴습니다.
+
+빌드 결과물에 HTML 파일은 `dist/index.html` **하나뿐**입니다. 앱 안에서 링크로 이동할 때는 Vue Router가 처리하니 잘 되지만, 새로고침이나 주소 직접 입력은 요청이 서버로 가고 서버에는 그 경로에 해당하는 파일이 없습니다.
+
+모든 경로에 `index.html`을 돌려주도록 설정해 해결했습니다.
+
+```json
+// vercel.json
+{
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
+```
+
+`/assets/*.js` 같은 실제 파일은 Vercel이 파일을 먼저 찾고 없을 때만 rewrite를 적용하므로 영향받지 않습니다. `createWebHistory`를 쓰는 SPA라면 어떤 서버에 올리든 같은 설정이 필요합니다.
+
+
+
 ## 구현 내용
 
 ### 1. 공통 패널 컴포넌트 (`Slot`)
