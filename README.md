@@ -1,62 +1,9 @@
-# Hands on - Weather UI Library
+# 날씨 안내 및 여행지 추천 서비스
 
 - **과목명** : Front-framework: Vue.js
-- **실습과제** : Hands on - Weather Mockup → Composition → Component → Router → Store → Axios → UI Library
 - **프로젝트명** : skala-weather
 
-한 파일(`App.vue`)에 몰려 있던 날씨 목업을 **재사용 가능한 컴포넌트로 분리**하고,
-**Vue Router**로 여러 페이지를 가진 애플리케이션으로 확장했습니다.
-Slot으로 공통 패널 디자인을 하나로 묶고, Props / Emits로 부모–자식 간 데이터 흐름을 정리했으며,
-여기에 **Pinia 전역 스토어**로 단위 · 즐겨찾기 · 방문 기록을 모든 화면이 함께 쓰도록 했고,
-**Axios**로 OpenWeatherMap과 한국관광공사 관광정보를 연동해 화면을 실제 데이터로 채웠습니다.
-**키보드 단축키**와 **직접 만든 화면 두 개**(여행지 추천 · 비 소식)도 더했습니다.
-마지막으로 **Element Plus**를 부분 적용해 로딩 · 알림 · 빈 상태 표현을 정리했습니다.
-
 ---
-
-## 환경 변수
-
-프로젝트 루트에 `.env` 파일을 만들고 발급받은 키를 넣습니다. `VITE_`로 시작해야 클라이언트 코드에서 읽을 수 있습니다.
-
-```
-VITE_OPENWEATHER_API_KEY=OpenWeatherMap에서_발급받은_키
-VITE_TOUR_API_KEY=공공데이터포털_일반인증키(Decoding)
-```
-
-- 공공데이터포털 키는 반드시 **Decoding** 쪽을 넣습니다. Encoding 키(`%2B` 등이 섞인 값)를 넣으면 axios가 한 번 더 인코딩해 인증이 실패합니다.
-- `.env`는 `.gitignore`에 등록해 두었습니다.
-
-## 프로젝트 구조
-
-```
-src/
-├─ App.vue                  레이아웃 셸 (네비게이션 + RouterView)
-├─ router/index.js          라우트 정의 · 지연 로딩
-├─ stores/
-│  ├─ weatherStore.js       실시간 날씨 (OpenWeatherMap)
-│  ├─ tourStore.js          주변 관광지 (한국관광공사)
-│  ├─ configStore.js        날씨 단위 (섭씨 / 화씨)
-│  ├─ favoriteStore.js      즐겨찾기 도시 (직접 추가)
-│  └─ historyStore.js       최근 본 지역 (직접 추가)
-├─ views/
-│  ├─ WeatherHomeView.vue   메인 대시보드 (Mock Data · 상태 소유)
-│  ├─ WeatherDetailView.vue 도시 상세 페이지
-│  ├─ TravelPickView.vue    여행지 추천 (직접 추가)
-│  ├─ WeatherRainyView.vue  비 소식 (직접 추가)
-│  ├─ WeatherAboutView.vue  서비스 소개
-│  └─ NotFoundView.vue      404
-├─ components/exercise/
-│  ├─ BaseDashboardCard.vue 공통 패널 (slot)
-│  ├─ NavigationBar.vue     상단 네비게이션
-│  ├─ UnitToggler.vue       섭씨 · 화씨 전환
-│  ├─ SearchBar.vue         도시 검색 입력 · 단축키
-│  ├─ WeatherCard.vue       도시 카드 1장
-│  ├─ LifeIndexPanel.vue    생활지수
-│  ├─ OutfitPanel.vue       옷차림 · 메뉴 추천
-│  ├─ TravelSpotPanel.vue   가볼 만한 곳
-│  └─ RankingBoard.vue      전국 랭킹
-└─ assets/main.css          색상 토큰 · 배경 (전역)
-```
 
 ## 페이지 구성
 
@@ -64,25 +11,10 @@ src/
 | ------------------ | ---------- | ----------------------------------------------------------- |
 | `/`                | `home`     | 메인 대시보드 — 검색 / 지역별 카드 / 생활지수 / 추천 / 랭킹 |
 | `/weather/:cityId` | `detail`   | 선택한 도시의 상세 기상 정보                                |
-| `/travel`          | `travel`   | 날씨 조건을 골라 점수로 뽑는 여행지 추천 (직접 추가)        |
-| `/rainy`           | `rainy`    | 비가 오는 지역만 모아 보기 (직접 추가)                      |
+| `/travel`          | `travel`   | 날씨 조건을 골라 점수로 뽑는 여행지 추천 (커스텀 뷰)        |
+| `/rainy`           | `rainy`    | 비가 오는 지역만 모아 보기 (커스텀 뷰)                      |
 | `/about`           | `about`    | 서비스 소개                                                 |
 | `/:pathMatch(.*)*` | `NotFound` | 존재하지 않는 경로                                          |
-
-```
-App.vue (셸)
-├─ NavigationBar          HOME / RAINY / TRAVEL / ABOUT — 모든 페이지 공통
-├─ UnitToggler           섭씨 / 화씨 — 모든 페이지 공통
-└─ RouterView
-   └─ WeatherHomeView
-      ├─ [도시 검색]        SearchBar        (Enter / Esc 단축키)
-      ├─ [최근 본 지역]      historyStore 기록이 있을 때만 표시
-      ├─ [지역별 날씨 현황]  WeatherCard × 18 (더운 지역 · 즐겨찾기 필터)
-      ├─ [생활지수]         LifeIndexPanel
-      ├─ [오늘의 추천]       OutfitPanel
-      ├─ [전국 랭킹]        RankingBoard
-      └─ [상태바]           화면 하단 고정 — 선택한 도시 표시
-```
 
 ---
 
