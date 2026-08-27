@@ -69,6 +69,33 @@ const features = [
     name: '전국 랭킹',
     desc: '기온이 높은 상위 10개 지역과 전국 평균 기온, 비가 오는 지역 수를 보여줍니다.',
   },
+  {
+    id: 'favorite',
+    icon: '⭐',
+    name: '즐겨찾기',
+    desc: '자주 보는 지역에 별을 달아 두고, 대시보드에서 즐겨찾기만 골라 볼 수 있습니다.',
+  },
+  {
+    id: 'history',
+    icon: '🕘',
+    name: '최근 본 지역',
+    desc: '상세 페이지를 열면 기록이 남아, 대시보드에서 최근 다섯 곳으로 바로 돌아갈 수 있습니다.',
+  },
+]
+
+const settings = [
+  {
+    id: 'unit',
+    icon: '🌡️',
+    name: '날씨 단위',
+    desc: '섭씨(℃)와 화씨(℉)를 전환합니다. 모든 화면의 기온 표시가 함께 바뀝니다.',
+  },
+  {
+    id: 'theme',
+    icon: '🌗',
+    name: '화면 테마',
+    desc: '라이트와 다크 모드를 직접 고를 수 있습니다.',
+  },
 ]
 
 const shortcuts = [
@@ -120,6 +147,23 @@ const shortcuts = [
           </div>
         </li>
       </ul>
+    </BaseDashboardCard>
+
+    <BaseDashboardCard title="화면 설정">
+      <ul class="feature-list">
+        <li class="feature" v-for="item in settings" :key="item.id">
+          <span class="feature-icon" aria-hidden="true">{{ item.icon }}</span>
+          <div class="feature-body">
+            <h3 class="feature-name">{{ item.name }}</h3>
+            <p class="feature-desc">{{ item.desc }}</p>
+          </div>
+        </li>
+      </ul>
+
+      <p class="notice">
+        <span class="notice-icon" aria-hidden="true">⚙️</span>
+        두 설정 모두 화면 오른쪽 위에 있고, 페이지를 옮겨 다녀도 그대로 유지됩니다.
+      </p>
     </BaseDashboardCard>
 
     <BaseDashboardCard title="단축키">
@@ -375,9 +419,7 @@ const shortcuts = [
   outline-offset: 3px;
 }
 
-@media (prefers-color-scheme: dark) {
-  .home-btn {
-    color: #08192b;
-  }
+:root[data-theme='dark'] .home-btn {
+  color: #08192b;
 }
 </style>

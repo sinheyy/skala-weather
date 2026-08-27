@@ -11,7 +11,6 @@
 .nav-bar {
   display: flex;
   gap: 24px;
-  border-bottom: 1px solid var(--divider);
 }
 
 .nav-link {

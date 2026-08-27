@@ -1,24 +1,17 @@
-# Hands on - Weather Router
+# Hands on - Weather Store
 
 - **과목명** : Front-framework: Vue.js
-- **실습과제** : Hands on - Weather Mockup → Composition → Component → Router
+- **실습과제** : Hands on - Weather Mockup → Composition → Component → Router → Store
 - **프로젝트명** : skala-weather
 
 한 파일(`App.vue`)에 몰려 있던 날씨 목업을 **재사용 가능한 컴포넌트로 분리**하고,
 **Vue Router**로 여러 페이지를 가진 애플리케이션으로 확장했습니다.
 Slot으로 공통 패널 디자인을 하나로 묶고, Props / Emits로 부모–자식 간 데이터 흐름을 정리했으며,
-여기에 **키보드 단축키**와 **직접 만든 화면 두 개**(여행지 추천 · 비 소식)를 더했습니다.
+여기에 **Pinia 전역 스토어**로 단위 · 테마 · 즐겨찾기 · 방문 기록을 모든 화면이 함께 쓰도록 했고,
+**키보드 단축키**와 **직접 만든 화면 두 개**(여행지 추천 · 비 소식)를 더했습니다.
 
 ---
 
-## 실행 방법
-
-```sh
-npm install
-npm run dev
-```
-
-빌드 확인은 `npm run build`, 린트는 `npm run lint`로 수행합니다.
 
 ## 프로젝트 구조
 
@@ -26,6 +19,10 @@ npm run dev
 src/
 ├─ App.vue                  레이아웃 셸 (네비게이션 + RouterView)
 ├─ router/index.js          라우트 정의 · 지연 로딩
+├─ stores/
+│  ├─ configStore.js        날씨 단위 · 화면 테마
+│  ├─ favoriteStore.js      즐겨찾기 도시 (직접 추가)
+│  └─ historyStore.js       최근 본 지역 (직접 추가)
 ├─ views/
 │  ├─ WeatherHomeView.vue   메인 대시보드 (Mock Data · 상태 소유)
 │  ├─ WeatherDetailView.vue 도시 상세 페이지
@@ -36,6 +33,8 @@ src/
 ├─ components/exercise/
 │  ├─ BaseDashboardCard.vue 공통 패널 (slot)
 │  ├─ NavigationBar.vue     상단 네비게이션
+│  ├─ UnitToggler.vue       섭씨 · 화씨 전환
+│  ├─ ThemeToggler.vue      라이트 · 다크 전환
 │  ├─ SearchBar.vue         도시 검색 입력 · 단축키
 │  ├─ WeatherCard.vue       도시 카드 1장
 │  ├─ LifeIndexPanel.vue    생활지수
@@ -59,10 +58,13 @@ src/
 ```
 App.vue (셸)
 ├─ NavigationBar          HOME / RAINY / TRAVEL / ABOUT — 모든 페이지 공통
+├─ ThemeToggler          라이트 / 다크 — 모든 페이지 공통
+├─ UnitToggler           섭씨 / 화씨 — 모든 페이지 공통
 └─ RouterView
    └─ WeatherHomeView
       ├─ [도시 검색]        SearchBar        (Enter / Esc 단축키)
-      ├─ [지역별 날씨 현황]  WeatherCard × 18 (반응형 그리드 · 더운 지역만 보기)
+      ├─ [최근 본 지역]      historyStore 기록이 있을 때만 표시
+      ├─ [지역별 날씨 현황]  WeatherCard × 18 (더운 지역 · 즐겨찾기 필터)
       ├─ [생활지수]         LifeIndexPanel
       ├─ [오늘의 추천]       OutfitPanel
       ├─ [전국 랭킹]        RankingBoard
@@ -245,7 +247,7 @@ const showDetail = (cityId) => {
 
 ### 7. Mock Data 보관 위치
 
-Mock Data는 **각 뷰가 직접 가지고 있습니다.** 화면을 옮겨 다녀도 상태가 이어지는 전역 저장소는 아직 배우기 전이라, 뷰마다 필요한 배열을 선언해 두고 자식에게는 props로만 내려 줍니다.
+Mock Data는 **각 뷰가 직접 가지고 있습니다.** 라우팅된 뷰끼리는 props가 닿지 않아, 뷰마다 필요한 배열을 선언해 두고 자식에게는 props로만 내려 줍니다.
 
 ```js
 // WeatherHomeView.vue — 검색 / 필터가 반응해야 하므로 ref
@@ -260,7 +262,8 @@ const weatherList = [
 ```
 
 - 홈은 검색·필터가 걸리므로 `ref()`로 감싸고, 나머지 뷰는 읽기만 하므로 `const` 배열 그대로 씁니다.
-- 라우팅된 뷰끼리는 부모–자식 관계가 아니라 **`RouterView`가 갈아 끼우는 형제 관계**입니다. props가 닿지 않아 같은 배열이 여러 뷰에 중복됩니다. 다음 단계인 **Pinia Store**로 합칠 부분입니다.
+- 라우팅된 뷰끼리는 부모–자식 관계가 아니라 **`RouterView`가 갈아 끼우는 형제 관계**입니다. props가 닿지 않아 같은 배열이 여러 뷰에 중복됩니다.
+- 뒤에서 도입한 **Pinia**로 이 중복도 `weatherStore` 하나로 합칠 수 있습니다. 날씨 데이터 자체는 아직 뷰에 남겨 두었습니다.
 - 반대로 컴포넌트는 전부 자식이므로, 데이터를 직접 import하는 컴포넌트는 하나도 없습니다. `TravelSpotPanel`도 관광 정보 배열을 `:spots`로 받습니다.
 
 ### 8. 키보드 단축키 (`키 수식어`)
@@ -367,36 +370,90 @@ const outfit = computed(() => {
 - `TravelSpotPanel`은 `:city`와 `:spots`를 함께 받아 `find`로 지역을 찾고, 강수량 · 기온에 따라 관광 팁 문구를 바꿉니다.
 - 두 패널 모두 홈 · 상세 · 여행지 추천 **세 화면에서 그대로 재사용**됩니다.
 
----
+### 12. 전역 상태 (`Pinia`)
 
-## 컴포넌트 인터페이스
+화면이 바뀌어도 이어져야 하는 값은 스토어로 올렸습니다. 교안의 setup 스타일(`defineStore(이름, () => {...})`)로 작성했고, `ref`는 state, `computed`는 getters, 일반 함수는 actions가 됩니다.
 
-| 컴포넌트            | Props           | Emits                                           |
-| ------------------- | --------------- | ----------------------------------------------- |
-| `BaseDashboardCard` | `title`         | — (기본 slot)                                   |
-| `SearchBar`         | `keyword`       | `update-query`, `select-first`                  |
-| `WeatherCard`       | `city`          | `select-card`, `click-detail`, `show-recommend` |
-| `LifeIndexPanel`    | `city`          | —                                               |
-| `OutfitPanel`       | `city`          | —                                               |
-| `TravelSpotPanel`   | `city`, `spots` | —                                               |
-| `RankingBoard`      | `cities`        | —                                               |
-| `NavigationBar`     | —               | —                                               |
+```js
+// stores/configStore.js
+export const useConfigStore = defineStore('config', () => {
+  const unit = ref('celsius') // state
 
-상태(`keyword`, `selectedCity`, `onlyHot`, `weatherList`)와 `window.alert` 처리는 모두 `WeatherHomeView`가 소유하고, 자식들은 표시와 이벤트 전달만 담당합니다.
+  const unitSymbol = computed(() => (unit.value === 'fahrenheit' ? '℉' : '℃')) // getters
 
-## 학습 정리
+  const toggleUnit = () => {
+    // actions
+    unit.value = unit.value === 'celsius' ? 'fahrenheit' : 'celsius'
+  }
 
-| 개념             | 내용                                                                                          |
-| ---------------- | --------------------------------------------------------------------------------------------- |
-| `slot`           | 껍데기와 내용을 분리. 슬롯 내용은 **부모 스코프**로 컴파일되므로 scoped 스타일도 부모에 둔다  |
-| `props`          | 읽기 전용. 자식에서 직접 수정 불가. `<script>`에서 쓰려면 `const props = defineProps(...)`    |
-| `emits`          | 자식은 "무슨 일이 있었다"만 알리고, 실제 처리는 부모가 결정                                   |
-| `v-model` 규약   | `modelValue` / `update:modelValue` 이름을 지키면 `v-model` 사용 가능. 다른 이름이면 수동 연결 |
-| `.stop`          | 컴포넌트로 분리해도 DOM 버블링은 그대로. 중첩 클릭 핸들러에 필수                              |
-| 지연 로딩        | `component: () => import(...)`. 정적 import가 하나라도 남으면 분할되지 않음                   |
-| `RouterLink`     | `router-link-active`는 접두사 일치, `router-link-exact-active`는 완전 일치                    |
-| 동적 라우트      | `:cityId` → `route.params.cityId`. 이동은 `name` + `params` 조합이 안전                       |
-| 키 수식어        | `@keyup.enter` / `@keyup.esc`. `e.key` 비교 없이 특정 키만 처리                               |
-| `v-model` 수식어 | `.number`는 입력값을 숫자로 변환. 텍스트 입력은 기본이 문자열이라 그대로 비교하면 어긋난다    |
-| 형제 뷰          | `RouterView`로 갈아 끼우는 뷰끼리는 props가 닿지 않는다 → 전역 상태(Pinia)가 필요한 지점      |
-| CSS 변수         | DOM을 타고 상속되므로, 여러 페이지가 공유하려면 `:root`에 선언해야 한다                       |
+  return { unit, unitSymbol, toggleUnit }
+})
+```
+
+| 스토어          | state           | getters                            | actions                                          |
+| --------------- | --------------- | ---------------------------------- | ------------------------------------------------ |
+| `configStore`   | `unit`, `theme` | `unitSymbol`, `unitName`, `isDark` | `toggleUnit`, `toggleTheme`                      |
+| `favoriteStore` | `favoriteIds`   | `favoriteCount`                    | `isFavorite`, `toggleFavorite`, `clearFavorites` |
+| `historyStore`  | `historyIds`    | `hasHistory`                       | `addHistory`, `clearHistory`                     |
+
+- 컴포넌트에서는 `const configStore = useConfigStore()`로 받아 `configStore.unit`처럼 **점 표기로 접근**했습니다. `const { unit } = configStore`처럼 구조 분해하면 반응형 연결이 끊어지고, 살리려면 `storeToRefs`가 필요합니다.
+- `favoriteStore`와 `historyStore`는 **직접 추가한 스토어**이고, 테마는 앱 설정이라 별도 파일 대신 `configStore`에 state · getter · action을 더했습니다.
+- 스토어는 부모가 props로 내려 줄 필요 없이 **필요한 컴포넌트가 직접 꺼내 씁니다.** `App.vue`, `WeatherCard`, `RankingBoard`, `UnitToggler`, `ThemeToggler`, 홈 · 상세 뷰에서 사용합니다.
+
+### 13. 단위 변환 적용
+
+```js
+// WeatherCard.vue
+const displayTemp = computed(() => {
+  const rawTemp = props.city.temp
+
+  if (configStore.unit === 'fahrenheit') {
+    return Math.round((rawTemp * 9) / 5 + 32)
+  }
+
+  return rawTemp
+})
+```
+
+- 원본 데이터는 **항상 섭씨 숫자로 두고**, 화면에 그릴 때만 변환합니다. 판정 로직(`city.temp >= 25`)도 원본 기준이라 단위를 바꿔도 결과가 흔들리지 않습니다.
+- 대신 라벨 숫자는 `hotStandard`로 25 ↔ 77을 바꿔, 화씨 화면에서 "90℉ / 더움(25도 이상)"처럼 어긋나지 않게 했습니다.
+- **평균 대비 편차는 변환식을 그대로 쓰면 틀립니다.** `+32`가 두 번 들어가기 때문입니다. 평균도 화씨로 바꾼 뒤 빼서 `℃ 편차 × 1.8`이 되도록 했습니다.
+- 같은 변환 코드가 카드 · 상세 · 랭킹에 반복됩니다. Composable로 묶을 수 있는 지점입니다. (범위 제외)
+
+### 14. 라이트 / 다크 모드
+
+```js
+// App.vue
+watchEffect(() => {
+  document.documentElement.setAttribute('data-theme', configStore.theme)
+})
+```
+
+```css
+/* main.css */
+:root[data-theme='dark'] {
+  --text-strong: #e9f2fb;
+  --accent: #7cc0f7;
+}
+```
+
+- 원래는 모든 다크 스타일이 `@media (prefers-color-scheme: dark)`라 **브라우저 설정만 따랐고 버튼으로 바꿀 수 없었습니다.** 11개 파일의 다크 블록을 `:root[data-theme='dark'] .클래스` 선택자로 바꿨습니다.
+- `<style scoped>` 안에서도 **조상 선택자는 그대로 동작합니다.** scope id는 대상 클래스에만 붙기 때문입니다.
+- 대신 시스템 다크모드 자동 감지는 사라지고, 기본값이 라이트가 됩니다.
+
+### 15. 즐겨찾기 · 방문 기록
+
+```js
+// stores/historyStore.js
+const addHistory = (cityId) => {
+  const rest = historyIds.value.filter((id) => id !== cityId)
+
+  historyIds.value = [cityId, ...rest].slice(0, 5)
+}
+```
+
+- 이미 있는 id를 걸러낸 뒤 맨 앞에 붙이고 `slice(0, 5)`로 잘라, **중복 없이 최신 5개**만 남깁니다.
+- 기록은 상세 페이지 `onMounted`에서 남기고, 메인은 `v-if="historyStore.hasHistory"`로 기록이 있을 때만 카드를 띄웁니다.
+- 즐겨찾기 별은 카드 클릭과 겹치므로 `@click.stop`이 필요합니다. 필터는 기존 검색 · 온도 조건에 `matchFavorite` 한 줄을 더해 처리했습니다.
+- 두 스토어 모두 새로고침하면 초기화됩니다. 교안의 `authStore`처럼 `localStorage`를 붙이면 유지할 수 있습니다.
+

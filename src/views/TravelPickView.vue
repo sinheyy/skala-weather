@@ -536,21 +536,19 @@ watch(pickSummary, (newValue) => {
   color: var(--text-strong);
 }
 
-@media (prefers-color-scheme: dark) {
-  .pick-btn--on {
-    color: #08192b;
-  }
+:root[data-theme='dark'] .pick-btn--on {
+  color: #08192b;
+}
 
-  .score-no {
-    background: rgba(255, 255, 255, 0.1);
-  }
+:root[data-theme='dark'] .score-no {
+  background: rgba(255, 255, 255, 0.1);
+}
 
-  .score-no--top {
-    color: #08192b;
-  }
+:root[data-theme='dark'] .score-no--top {
+  color: #08192b;
+}
 
-  .score-bar {
-    background: rgba(255, 255, 255, 0.12);
-  }
+:root[data-theme='dark'] .score-bar {
+  background: rgba(255, 255, 255, 0.12);
 }
 </style>

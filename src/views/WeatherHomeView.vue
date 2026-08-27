@@ -2,6 +2,9 @@
 import { ref, computed, watch, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 
+import { useFavoriteStore } from '@/stores/favoriteStore'
+import { useHistoryStore } from '@/stores/historyStore'
+
 import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
 import SearchBar from '@/components/exercise/SearchBar.vue'
 import WeatherCard from '@/components/exercise/WeatherCard.vue'
@@ -10,10 +13,13 @@ import OutfitPanel from '@/components/exercise/OutfitPanel.vue'
 import RankingBoard from '@/components/exercise/RankingBoard.vue'
 
 const router = useRouter()
+const favoriteStore = useFavoriteStore()
+const historyStore = useHistoryStore()
 
 const keyword = ref('')
 const selectedCity = ref('')
 const onlyHot = ref(false)
+const onlyFavorite = ref(false)
 
 const weatherList = ref([
   { id: 'city_01', name: '서울', temp: 32, humidity: 50, precipitation: 0, status: '☀️맑음' },
@@ -47,10 +53,18 @@ const filteredWeatherList = computed(() => {
 
   return weatherList.value.filter((item) => {
     const matchKeyword = !trimKeyword || item.name.includes(trimKeyword)
+    const matchHot = !onlyHot.value || item.temp >= 25
+    const matchFavorite = !onlyFavorite.value || favoriteStore.isFavorite(item.id)
 
-    return matchKeyword && (!onlyHot.value || item.temp >= 25)
+    return matchKeyword && matchHot && matchFavorite
   })
 })
+
+const historyCities = computed(() =>
+  historyStore.historyIds
+    .map((id) => weatherList.value.find((item) => item.id === id))
+    .filter((item) => item),
+)
 
 const selected = computed(() =>
   selectedCity.value ? `${selectedCity.value}이(가) 선택되었습니다.` : '',
@@ -110,16 +124,45 @@ watchEffect(() => {
       />
     </BaseDashboardCard>
 
+    <BaseDashboardCard title="최근 본 지역" v-if="historyStore.hasHistory">
+      <div class="history-row">
+        <button
+          class="history-chip"
+          v-for="item in historyCities"
+          :key="item.id"
+          type="button"
+          @click="showDetail(item.id)"
+        >
+          {{ item.name }}
+        </button>
+
+        <button class="history-clear" type="button" @click="historyStore.clearHistory()">
+          기록 지우기
+        </button>
+      </div>
+    </BaseDashboardCard>
+
     <div class="content-row">
       <BaseDashboardCard title="지역별 날씨 현황">
-        <button
-          class="hot-toggle"
-          :class="{ 'hot-toggle--on': onlyHot }"
-          type="button"
-          @click="onlyHot = !onlyHot"
-        >
-          🔥 더운 지역만 보기
-        </button>
+        <div class="filter-row">
+          <button
+            class="chip-toggle"
+            :class="{ 'chip-toggle--on': onlyHot }"
+            type="button"
+            @click="onlyHot = !onlyHot"
+          >
+            🔥 더운 지역만 보기
+          </button>
+
+          <button
+            class="chip-toggle"
+            :class="{ 'chip-toggle--on': onlyFavorite }"
+            type="button"
+            @click="onlyFavorite = !onlyFavorite"
+          >
+            ⭐ 즐겨찾기만 보기 ({{ favoriteStore.favoriteCount }})
+          </button>
+        </div>
 
         <div class="city-grid" v-if="filteredWeatherList.length > 0">
           <WeatherCard
@@ -184,8 +227,14 @@ watchEffect(() => {
   color: var(--text-strong);
 }
 
-.hot-toggle {
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 14px;
+}
+
+.chip-toggle {
   padding: 8px 14px;
   border: 1px solid var(--divider);
   border-radius: 999px;
@@ -200,10 +249,46 @@ watchEffect(() => {
     color 0.2s ease;
 }
 
-.hot-toggle--on {
+.chip-toggle--on {
   border-color: var(--accent);
   background: var(--accent);
   color: #ffffff;
+}
+
+.history-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-chip {
+  padding: 8px 14px;
+  border: 1px solid var(--divider);
+  border-radius: 999px;
+  background: var(--card-bg);
+  font-size: 0.84rem;
+  font-family: inherit;
+  font-weight: 700;
+  color: var(--text-strong);
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.history-chip:hover {
+  border-color: var(--accent);
+}
+
+.history-clear {
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 0.78rem;
+  font-family: inherit;
+  color: var(--text-soft);
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .empty {

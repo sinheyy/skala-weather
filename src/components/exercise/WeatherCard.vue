@@ -1,15 +1,45 @@
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+import { useConfigStore } from '@/stores/configStore'
+import { useFavoriteStore } from '@/stores/favoriteStore'
+
+const props = defineProps({
   city: { type: Object, required: true },
 })
 
 defineEmits(['select-card', 'click-detail', 'show-recommend'])
+
+const configStore = useConfigStore()
+const favoriteStore = useFavoriteStore()
+
+const displayTemp = computed(() => {
+  const rawTemp = props.city.temp
+
+  if (configStore.unit === 'fahrenheit') {
+    return Math.round((rawTemp * 9) / 5 + 32)
+  }
+
+  return rawTemp
+})
+
+const hotStandard = computed(() => (configStore.unit === 'fahrenheit' ? 77 : 25))
 </script>
 
 <template>
   <article class="city-card" @click="$emit('select-card', city.name)">
     <div class="city-card__head">
-      <h3 class="city-name">{{ city.name }}</h3>
+      <h3 class="city-name">
+        <button
+          class="favorite-btn"
+          :class="{ 'favorite-btn--on': favoriteStore.isFavorite(city.id) }"
+          type="button"
+          @click.stop="favoriteStore.toggleFavorite(city.id)"
+        >
+          {{ favoriteStore.isFavorite(city.id) ? '★' : '☆' }}
+        </button>
+        {{ city.name }}
+      </h3>
       <button class="city-status" type="button" @click.stop="$emit('show-recommend', city.status)">
         {{ city.status }}
       </button>
@@ -17,11 +47,15 @@ defineEmits(['select-card', 'click-detail', 'show-recommend'])
 
     <div class="temp-block">
       <p class="temp-label">현재 기온</p>
-      <p class="city-temp">{{ city.temp }}<span class="temp-unit">℃</span></p>
+      <p class="city-temp">
+        {{ displayTemp }}<span class="temp-unit">{{ configStore.unitSymbol }}</span>
+      </p>
     </div>
 
-    <div class="temp-badge temp-badge--hot" v-if="city.temp >= 25">🔥 더움 (25도 이상)</div>
-    <div class="temp-badge temp-badge--cool" v-else>❄️ 선선함 (25도 미만)</div>
+    <div class="temp-badge temp-badge--hot" v-if="city.temp >= 25">
+      🔥 더움 ({{ hotStandard }}도 이상)
+    </div>
+    <div class="temp-badge temp-badge--cool" v-else>❄️ 선선함 ({{ hotStandard }}도 미만)</div>
 
     <dl class="metrics">
       <div class="metric">
@@ -66,9 +100,33 @@ defineEmits(['select-card', 'click-detail', 'show-recommend'])
 }
 
 .city-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--text-strong);
+}
+
+.favorite-btn {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    transform 0.1s ease;
+}
+
+.favorite-btn--on {
+  color: #f0a92e;
+}
+
+.favorite-btn:active {
+  transform: scale(0.9);
 }
 
 .city-status {
@@ -187,23 +245,21 @@ defineEmits(['select-card', 'click-detail', 'show-recommend'])
   transform: scale(0.98);
 }
 
-@media (prefers-color-scheme: dark) {
-  .temp-badge--hot {
-    background: rgba(255, 153, 94, 0.18);
-    color: #ffb488;
-  }
+:root[data-theme='dark'] .temp-badge--hot {
+  background: rgba(255, 153, 94, 0.18);
+  color: #ffb488;
+}
 
-  .temp-badge--cool {
-    background: rgba(124, 192, 247, 0.18);
-    color: #9fd0fb;
-  }
+:root[data-theme='dark'] .temp-badge--cool {
+  background: rgba(124, 192, 247, 0.18);
+  color: #9fd0fb;
+}
 
-  .city-card:hover {
-    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5);
-  }
+:root[data-theme='dark'] .city-card:hover {
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5);
+}
 
-  .detail-btn {
-    color: #08192b;
-  }
+:root[data-theme='dark'] .detail-btn {
+  color: #08192b;
 }
 </style>

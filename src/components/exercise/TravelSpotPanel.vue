@@ -131,9 +131,7 @@ const spotTip = computed(() => {
   font-size: 1.3rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  .spot-no {
-    background: rgba(255, 255, 255, 0.1);
-  }
+:root[data-theme='dark'] .spot-no {
+  background: rgba(255, 255, 255, 0.1);
 }
 </style>

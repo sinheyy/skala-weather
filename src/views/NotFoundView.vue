@@ -73,9 +73,7 @@
   outline-offset: 3px;
 }
 
-@media (prefers-color-scheme: dark) {
-  .home-btn {
-    color: #08192b;
-  }
+:root[data-theme='dark'] .home-btn {
+  color: #08192b;
 }
 </style>

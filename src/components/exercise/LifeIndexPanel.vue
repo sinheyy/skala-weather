@@ -155,14 +155,12 @@ const umbrellaIndex = computed(() => {
   font-size: 1.3rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  .index-value--good {
-    background: rgba(126, 217, 178, 0.18);
-    color: #8fe0b8;
-  }
+:root[data-theme='dark'] .index-value--good {
+  background: rgba(126, 217, 178, 0.18);
+  color: #8fe0b8;
+}
 
-  .index-value--bad {
-    background: rgba(255, 255, 255, 0.08);
-  }
+:root[data-theme='dark'] .index-value--bad {
+  background: rgba(255, 255, 255, 0.08);
 }
 </style>

@@ -1,6 +1,10 @@
 <script setup>
 import { computed } from 'vue'
 
+import { useConfigStore } from '@/stores/configStore'
+
+const configStore = useConfigStore()
+
 const props = defineProps({
   cities: { type: Array, required: true },
 })
@@ -9,10 +13,18 @@ const tempRankList = computed(() => {
   return [...props.cities].sort((a, b) => b.temp - a.temp).slice(0, 10)
 })
 
+const displayTemp = (rawTemp) => {
+  if (configStore.unit === 'fahrenheit') {
+    return Math.round((rawTemp * 9) / 5 + 32)
+  }
+
+  return rawTemp
+}
+
 const averageTemp = computed(() => {
   const total = props.cities.reduce((sum, item) => sum + item.temp, 0)
 
-  return (total / props.cities.length).toFixed(1)
+  return displayTemp(total / props.cities.length).toFixed(1)
 })
 
 const rainyCityCount = computed(() => {
@@ -24,7 +36,7 @@ const rainyCityCount = computed(() => {
   <dl class="rank-summary">
     <div class="rank-stat">
       <dt>전국 평균</dt>
-      <dd>{{ averageTemp }}℃</dd>
+      <dd>{{ averageTemp }}{{ configStore.unitSymbol }}</dd>
     </div>
     <div class="rank-stat">
       <dt>비 오는 지역</dt>
@@ -38,7 +50,7 @@ const rainyCityCount = computed(() => {
     <li class="rank-item" v-for="(item, index) in tempRankList" :key="item.id">
       <span class="rank-no" :class="{ 'rank-no--top': index < 3 }">{{ index + 1 }}</span>
       <span class="rank-city">{{ item.name }}</span>
-      <span class="rank-value">{{ item.temp }}℃</span>
+      <span class="rank-value">{{ displayTemp(item.temp) }}{{ configStore.unitSymbol }}</span>
     </li>
   </ol>
 </template>
@@ -156,25 +168,23 @@ const rainyCityCount = computed(() => {
   color: var(--text-soft);
 }
 
-@media (prefers-color-scheme: dark) {
-  .rank-no {
-    background: rgba(255, 255, 255, 0.1);
-  }
+:root[data-theme='dark'] .rank-no {
+  background: rgba(255, 255, 255, 0.1);
+}
 
-  .rank-no--top {
-    color: #08192b;
-  }
+:root[data-theme='dark'] .rank-no--top {
+  color: #08192b;
+}
 
-  .rank-list {
-    scrollbar-color: rgba(255, 255, 255, 0.26) transparent;
-  }
+:root[data-theme='dark'] .rank-list {
+  scrollbar-color: rgba(255, 255, 255, 0.26) transparent;
+}
 
-  .rank-list::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.26);
-  }
+:root[data-theme='dark'] .rank-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.26);
+}
 
-  .rank-list::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.4);
-  }
+:root[data-theme='dark'] .rank-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
 }
 </style>

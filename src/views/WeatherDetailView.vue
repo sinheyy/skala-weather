@@ -2,12 +2,18 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
+import { useConfigStore } from '@/stores/configStore'
+import { useFavoriteStore } from '@/stores/favoriteStore'
+import { useHistoryStore } from '@/stores/historyStore'
 import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
 import LifeIndexPanel from '@/components/exercise/LifeIndexPanel.vue'
 import OutfitPanel from '@/components/exercise/OutfitPanel.vue'
 import TravelSpotPanel from '@/components/exercise/TravelSpotPanel.vue'
 
 const route = useRoute()
+const configStore = useConfigStore()
+const favoriteStore = useFavoriteStore()
+const historyStore = useHistoryStore()
 
 const weatherList = [
   { id: 'city_01', name: '서울', temp: 32, humidity: 50, precipitation: 0, status: '☀️맑음' },
@@ -129,6 +135,10 @@ const city = ref(null)
 
 onMounted(() => {
   city.value = weatherList.find((item) => item.id === route.params.cityId) ?? null
+
+  if (city.value) {
+    historyStore.addHistory(city.value.id)
+  }
 })
 
 const recommend = computed(() => {
@@ -137,13 +147,30 @@ const recommend = computed(() => {
   return found ? found.recommend : '추천 정보가 없는 날씨예요.'
 })
 
-const averageTemp = computed(() => {
-  const total = weatherList.reduce((sum, item) => sum + item.temp, 0)
+const displayTemp = computed(() => {
+  const rawTemp = city.value.temp
 
-  return total / weatherList.length
+  if (configStore.unit === 'fahrenheit') {
+    return Math.round((rawTemp * 9) / 5 + 32)
+  }
+
+  return rawTemp
 })
 
-const tempGap = computed(() => (city.value.temp - averageTemp.value).toFixed(1))
+const averageTemp = computed(() => {
+  const total = weatherList.reduce((sum, item) => sum + item.temp, 0)
+  const rawAverage = total / weatherList.length
+
+  if (configStore.unit === 'fahrenheit') {
+    return (rawAverage * 9) / 5 + 32
+  }
+
+  return rawAverage
+})
+
+const tempGap = computed(() => (displayTemp.value - averageTemp.value).toFixed(1))
+
+const hotStandard = computed(() => (configStore.unit === 'fahrenheit' ? 77 : 25))
 </script>
 
 <template>
@@ -156,17 +183,34 @@ const tempGap = computed(() => (city.value.temp - averageTemp.value).toFixed(1))
     <template v-if="city">
       <header class="page-header">
         <p class="page-eyebrow">CITY DETAIL</p>
-        <h1 class="page-title">{{ city.name }}</h1>
+        <div class="title-row">
+          <h1 class="page-title">{{ city.name }}</h1>
+
+          <button
+            class="favorite-btn"
+            :class="{ 'favorite-btn--on': favoriteStore.isFavorite(city.id) }"
+            type="button"
+            @click="favoriteStore.toggleFavorite(city.id)"
+          >
+            {{ favoriteStore.isFavorite(city.id) ? '★ 즐겨찾기' : '☆ 즐겨찾기' }}
+          </button>
+        </div>
       </header>
 
       <BaseDashboardCard title="현재 날씨">
         <div class="summary">
           <div class="summary-main">
             <p class="summary-status">{{ city.status }}</p>
-            <p class="summary-temp">{{ city.temp }}<span class="temp-unit">℃</span></p>
+            <p class="summary-temp">
+              {{ displayTemp }}<span class="temp-unit">{{ configStore.unitSymbol }}</span>
+            </p>
 
-            <div class="temp-badge temp-badge--hot" v-if="city.temp >= 25">🔥 더움 (25도 이상)</div>
-            <div class="temp-badge temp-badge--cool" v-else>❄️ 선선함 (25도 미만)</div>
+            <div class="temp-badge temp-badge--hot" v-if="city.temp >= 25">
+              🔥 더움 ({{ hotStandard }}도 이상)
+            </div>
+            <div class="temp-badge temp-badge--cool" v-else>
+              ❄️ 선선함 ({{ hotStandard }}도 미만)
+            </div>
           </div>
 
           <dl class="metrics">
@@ -180,7 +224,7 @@ const tempGap = computed(() => (city.value.temp - averageTemp.value).toFixed(1))
             </div>
             <div class="metric">
               <dt>전국 평균 대비</dt>
-              <dd>{{ tempGap > 0 ? `+${tempGap}` : tempGap }}℃</dd>
+              <dd>{{ tempGap > 0 ? `+${tempGap}` : tempGap }}{{ configStore.unitSymbol }}</dd>
             </div>
           </dl>
         </div>
@@ -253,6 +297,33 @@ const tempGap = computed(() => (city.value.temp - averageTemp.value).toFixed(1))
   font-weight: 700;
   letter-spacing: 0.18em;
   color: var(--text-soft);
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.favorite-btn {
+  padding: 7px 12px;
+  border: 1px solid var(--divider);
+  border-radius: 999px;
+  background: var(--card-bg);
+  font-size: 0.78rem;
+  font-family: inherit;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.favorite-btn--on {
+  border-color: #f0a92e;
+  color: #f0a92e;
 }
 
 .page-title {
@@ -397,15 +468,13 @@ const tempGap = computed(() => (city.value.temp - averageTemp.value).toFixed(1))
   color: var(--text-strong);
 }
 
-@media (prefers-color-scheme: dark) {
-  .temp-badge--hot {
-    background: rgba(255, 153, 94, 0.18);
-    color: #ffb488;
-  }
+:root[data-theme='dark'] .temp-badge--hot {
+  background: rgba(255, 153, 94, 0.18);
+  color: #ffb488;
+}
 
-  .temp-badge--cool {
-    background: rgba(124, 192, 247, 0.18);
-    color: #9fd0fb;
-  }
+:root[data-theme='dark'] .temp-badge--cool {
+  background: rgba(124, 192, 247, 0.18);
+  color: #9fd0fb;
 }
 </style>
