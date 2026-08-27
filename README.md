@@ -7,6 +7,38 @@
 
 ---
 
+## 목차
+
+- [페이지 구성](#페이지-구성)
+- [Hands on 단계별 진행](#hands-on-단계별-진행)
+  - [1. Weather Mockup — Vue Syntax](#1-weather-mockup--vue-syntax)
+  - [2. Weather Composition — Composition API](#2-weather-composition--composition-api)
+  - [3. Weather Component — 기능 변경 없이 컴포넌트 분리](#3-weather-component--기능-변경-없이-컴포넌트-분리)
+  - [4. Weather Router — 페이지 분리](#4-weather-router--페이지-분리)
+  - [5. Weather Store — Pinia](#5-weather-store--pinia)
+  - [6. Weather Axios — 실제 데이터 연동](#6-weather-axios--실제-데이터-연동)
+  - [7. Weather UI Library — Element Plus 부분 적용](#7-weather-ui-library--element-plus-부분-적용)
+- [구현 내용 정리](#구현-내용-정리)
+  - [1. 공통 패널 컴포넌트 (`Slot`)](#1-공통-패널-컴포넌트-slot)
+  - [2. 검색 입력 (`Props` / `Emits`)](#2-검색-입력-props--emits)
+  - [3. 날씨 카드 (객체 `Props` + 이벤트 3종)](#3-날씨-카드-객체-props--이벤트-3종)
+  - [4. 사이드 패널 — 계산까지 위임](#4-사이드-패널--계산까지-위임)
+  - [5. 라우팅 · 지연 로딩](#5-라우팅--지연-로딩)
+  - [6. 상세 페이지 — 동적 라우트](#6-상세-페이지--동적-라우트)
+  - [7. 데이터 흐름](#7-데이터-흐름)
+  - [8. 키보드 단축키 (`키 수식어`)](#8-키보드-단축키-키-수식어)
+  - [9. 나만의 반응형 변수 — 더운 지역만 보기](#9-나만의-반응형-변수--더운-지역만-보기)
+  - [10. 직접 추가한 화면](#10-직접-추가한-화면)
+  - [11. 옷차림 · 메뉴 추천 패널](#11-옷차림--메뉴-추천-패널)
+  - [12. 전역 상태 (`Pinia`)](#12-전역-상태-pinia)
+  - [13. 단위 변환 적용](#13-단위-변환-적용)
+  - [14. Axios — 실시간 날씨 연동](#14-axios--실시간-날씨-연동)
+  - [15. 추가 API — 예보 · 일출 · 관광지](#15-추가-api--예보--일출--관광지)
+  - [16. 즐겨찾기 · 방문 기록](#16-즐겨찾기--방문-기록)
+  - [17. UI 라이브러리 (`Element Plus`)](#17-ui-라이브러리-element-plus)
+- [트러블슈팅](#트러블슈팅)
+  - [1. 새로고침하면 404](#1-새로고침하면-404)
+
 ## 페이지 구성
 
 | 경로               | 이름       | 화면                                                        |
@@ -36,13 +68,13 @@
 
 ### 2. Weather Composition — Composition API
 
-| 요구사항                                      | 구현                                             |
-| --------------------------------------------- | ------------------------------------------------ |
-| 반응형 상태 3종                               | `keyword`, `selectedCity`, `weatherList`         |
-| `computed` 필터링                             | `filteredWeatherList`                            |
-| `watch` · `watchEffect` 감시                  | 상태바 문구 변화 / 검색어 추적 콘솔 로그         |
-| 검색 결과 3분기 표시                          | 검색어 없음 · 일치 · 결과 없음                   |
-| **본인만의 반응형 변수 · computed · watcher** | `onlyHot` — 더운 지역만 보기 토글 + 전용 `watch` |
+| 요구사항                                      | 구현                                                 |
+| --------------------------------------------- | ---------------------------------------------------- |
+| 반응형 상태 3종                               | `keyword`, `selectedCity`, `weatherList`             |
+| `computed` 필터링                             | `filteredWeatherList`                                |
+| `watch` · `watchEffect` 감시                  | 상태바 문구 변화 / 검색어 추적 콘솔 로그로 확인 가능 |
+| 검색 결과에 따라 다르게 표시                  | 검색어 없음 · 일치 · 결과 없음                       |
+| **본인만의 반응형 변수 · computed · watcher** | `onlyHot` — 더운 지역만 보기 토글 + 전용 `watch`     |
 
 ### 3. Weather Component — 기능 변경 없이 컴포넌트 분리
 
@@ -57,16 +89,17 @@
 
 ### 4. Weather Router — 페이지 분리
 
-| 요구사항                                   | 구현                                               |
-| ------------------------------------------ | -------------------------------------------------- |
-| 지연 로딩 · Catch-all Route                | 전 라우트 `() => import(...)`, `/:pathMatch(.*)*`  |
-| `App.vue`에 네비게이션 + `RouterView`      | `NavigationBar` + `<RouterView />`                 |
-| 홈 뷰가 부모 컴포넌트 대체, **alert 제거** | `window.alert` → `router.push({ name: 'detail' })` |
-| 상세 뷰 — `:cityId` 동적 라우트            | `route.params.cityId`로 도시 조회                  |
-| 서비스 소개 페이지                         | `WeatherAboutView`                                 |
-| **본인 추가 view**                         | `/rainy` 비 소식, `/travel` 여행지 추천            |
+| 요구사항                                   | 구현                                                            |
+| ------------------------------------------ | --------------------------------------------------------------- |
+| 지연 로딩 · Catch-all Route                | 전 라우트 `() => import(...)`, `/:pathMatch(.*)*`               |
+| `App.vue`에 네비게이션 + `RouterView`      | `NavigationBar` + `<RouterView />`                              |
+| 홈 뷰가 부모 컴포넌트 대체, **alert 제거** | 상세 클릭 시 `window.alert` → `router.push({ name: 'detail' })` |
+| 상세 뷰 — `:cityId` 동적 라우트            | `route.params.cityId`로 도시 조회                               |
+| 서비스 소개 페이지                         | `WeatherAboutView`                                              |
+| **본인 추가 view**                         | `/rainy` 비 소식, `/travel` 여행지 추천                         |
 
-여기에 교안의 키보드 수식어를 활용해 검색창 단축키(`Enter` · `Esc`)를 더했습니다.
+여기에 교안 pdf의 키보드 수식어를 활용해 검색창 단축키(`Enter` · `Esc`)를 더했습니다.
+검색창에 커서를 둔 채로 Enter 클릭 시, 첫 번째 도시가 선택되며 Esc 클릭 시, 검색어가 지워집니다.
 
 ### 5. Weather Store — Pinia
 
@@ -77,22 +110,19 @@
 | 메인 · 상세에 단위 설정 적용                                                | 카드 · 상세 · 전국 랭킹까지 반영                        |
 | **본인 추가 Store**                                                         | `favoriteStore`(즐겨찾기), `historyStore`(최근 본 지역) |
 
-이 단계에서 네 뷰에 중복돼 있던 날씨 배열의 문제가 드러났지만, 실제 통합은 다음 단계에서 이뤄집니다.
+최근 본 지역은 '상세보기'를 클릭해서 상세 페이지에 이동했던 적이 있는 지역이 있을 경우 표시됩니다.
 
 ### 6. Weather Axios — 실제 데이터 연동
 
-| 요구사항                      | 구현                                                        |
-| ----------------------------- | ----------------------------------------------------------- |
-| OpenWeatherMap 실제 날씨 적용 | `weatherStore.fetchWeatherList()` — 18개 도시 `Promise.all` |
-| **OpenWeatherMap 추가 API**   | 5일/3시간 예보(`/forecast`) → 상세 페이지 24시간 예보       |
-| **기타 외부 API**             | 한국관광공사 관광정보(`locationBasedList2`) → 가볼 만한 곳  |
+| 요구사항                      | 구현                                                                              |
+| ----------------------------- | --------------------------------------------------------------------------------- |
+| OpenWeatherMap 실제 날씨 적용 | `weatherStore.fetchWeatherList()` — 18개 도시 `Promise.all`                       |
+| **OpenWeatherMap 추가 API**   | 5일/3시간 예보(`/forecast`) → 상세 페이지 내 24시간 예보                          |
+| **기타 외부 API**             | 한국관광공사 관광정보(`locationBasedList2`) API 호출 → 도시별 가볼 만한 곳을 표시 |
 
-가장 크게 바뀐 단계입니다.
-
-- 네 뷰에 복사돼 있던 목 데이터가 **`weatherStore` 한 곳으로** 합쳐졌습니다.
-- 상세 페이지 조회가 `onMounted` + `ref`에서 **`computed`로** 바뀌었습니다. API 응답이 나중에 도착하면 마운트 시점엔 목록이 비어 있기 때문입니다.
-- 하드코딩했던 관광지 목록(18개 × 3곳)을 지우고 API 응답으로 교체했습니다.
-- 별도 API 없이 응답에 들어 있던 `sys.sunrise` / `sys.sunset`으로 일출 · 일몰도 표시합니다.
+- 각 뷰에 복사돼 있던 데이터를 **`weatherStore` 한 곳으로** 합침 (AI 추천)
+- 하드코딩했던 관광지 목록(18개 × 3곳)을 지우고 관광정보 API 응답으로 교체
+- OpenWeatherMap 응답에 들어 있던 데이터로 일출 · 일몰 등 추가 정보 표시
 
 ### 7. Weather UI Library — Element Plus 부분 적용
 
@@ -100,43 +130,10 @@
 | -------------------------------- | ------------------------------------------------------- |
 | 외부 UI Library 선정 · 자유 적용 | Element Plus — 로딩 · 알림 · 빈 상태 · 에러 표현만 교체 |
 
-- Mockup 단계에서 넣었던 `window.alert`이 이 단계에서 **`ElMessage` 토스트**로 바뀌며 완전히 사라졌습니다.
-- 레이아웃과 폼은 손대지 않아 기존 디자인을 유지했습니다.
+- Mockup 단계에서 넣었던 `window.alert`이 이 단계에서 **`ElMessage` 토스트**로 바뀌며 완전히 사라짐
+- 레이아웃과 폼은 손대지 않아 기존 디자인을 유지
 
-### 단계를 가로지르는 변화
-
-| 항목          | 흐름                                                                      |
-| ------------- | ------------------------------------------------------------------------- |
-| 날씨 데이터   | 뷰 안 배열 → 네 뷰에 중복 → `weatherStore` → **OpenWeatherMap 실시간**    |
-| 관광지 데이터 | 하드코딩 18개 × 3곳 → **한국관광공사 API**                                |
-| 상세 조회     | `onMounted` + `ref` → **`computed`**                                      |
-| 알림          | `window.alert` → 상세는 `router.push`, 추천은 **`ElMessage`**             |
-| 상태 표현     | 직접 만든 문구 · 점선 박스 → **`el-skeleton` · `el-empty` · `v-loading`** |
-
-## 배포 (Vercel)
-
-정적 빌드 결과물을 Vercel에 배포했습니다. 배포하면서 로컬에서는 드러나지 않던 문제 세 가지를 만났고, 해결 과정에서 **AI의 도움을 받았습니다.**
-
-### 1. 새로고침하면 404
-
-`nalssi.vercel.app/weather/city_02`에서 새로고침하면 Vercel의 `404: NOT_FOUND`가 떴습니다.
-
-빌드 결과물에 HTML 파일은 `dist/index.html` **하나뿐**입니다. 앱 안에서 링크로 이동할 때는 Vue Router가 처리하니 잘 되지만, 새로고침이나 주소 직접 입력은 요청이 서버로 가고 서버에는 그 경로에 해당하는 파일이 없습니다.
-
-모든 경로에 `index.html`을 돌려주도록 설정해 해결했습니다.
-
-```json
-// vercel.json
-{
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
-}
-```
-
-`/assets/*.js` 같은 실제 파일은 Vercel이 파일을 먼저 찾고 없을 때만 rewrite를 적용하므로 영향받지 않습니다. `createWebHistory`를 쓰는 SPA라면 어떤 서버에 올리든 같은 설정이 필요합니다.
-
-
-
-## 구현 내용
+## 구현 내용 정리
 
 ### 1. 공통 패널 컴포넌트 (`Slot`)
 
@@ -582,3 +579,22 @@ const addHistory = (cityId) => {
 | `el-empty`    | 생활지수 · 옷차림 · 관광지 · 검색결과 · 없는 도시 | 직접 만든 점선 박스 |
 | `el-alert`    | 홈 · 예보 · 관광지 조회 실패                      | 에러 텍스트         |
 | `el-image`    | 관광지 사진 (`lazy` + `#error` 슬롯)              | `<img>`             |
+
+## 트러블슈팅
+
+정적 빌드 결과물을 Vercel에 배포했습니다. 배포하면서 로컬에서는 드러나지 않던 문제를 만나 해결 과정에서 **AI의 도움을 받았습니다.**
+
+### 1. 새로고침하면 404
+
+배포 후 `nalssi.vercel.app/weather/city_02`에서 새로고침하면 Vercel의 `404: NOT_FOUND`가 떴습니다.
+
+빌드 결과물에 HTML 파일은 `dist/index.html` **하나뿐**입니다. 앱 안에서 링크로 이동할 때는 Vue Router가 처리하니 잘 되지만 새로고침이나 주소 직접 입력은 요청이 서버로 가고 서버에는 그 경로에 해당하는 파일이 없습니다.
+
+모든 경로에 `index.html`을 돌려주도록 설정해 해결했습니다.
+
+```json
+// vercel.json
+{
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
+```
